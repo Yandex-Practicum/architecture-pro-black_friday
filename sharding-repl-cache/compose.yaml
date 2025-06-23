@@ -1,0 +1,436 @@
+name: sharding-repl-cache
+
+services:
+  configSrv1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: configSrv1
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.10
+    volumes:
+      - config-data-1:/data/db
+    command:
+      [
+        "--configsvr",
+        "--replSet", "config_server",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  configSrv2:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: configSrv2
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.11
+    volumes:
+      - config-data-2:/data/db
+    command:
+      [
+        "--configsvr",
+        "--replSet", "config_server",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  configSrv3:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: configSrv3
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.12
+    volumes:
+      - config-data-3:/data/db
+    command:
+      [
+        "--configsvr",
+        "--replSet", "config_server",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  router1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: router1
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.20
+    ports:
+      - "27020:27017"
+    command:
+      [
+        "mongos",
+        "--configdb", "config_server/173.17.0.10:27017,173.17.0.11:27017,173.17.0.12:27017",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    depends_on:
+      configSrv1:
+        condition: service_healthy
+      configSrv2:
+        condition: service_healthy
+      configSrv3:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  router2:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: router2
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.21
+    ports:
+      - "27021:27017"
+    command:
+      [
+        "mongos",
+        "--configdb", "config_server/173.17.0.10:27017,173.17.0.11:27017,173.17.0.12:27017",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    depends_on:
+      configSrv1:
+        condition: service_healthy
+      configSrv2:
+        condition: service_healthy
+      configSrv3:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  # --- Shard 1: replica set из 3 узлов (primary + 2 secondaries) ---
+  shard1a:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard1a
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.30
+    volumes:
+      - shard-data-1a:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet", "shard1",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  shard1b:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard1b
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.32
+    volumes:
+      - shard-data-1b:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet", "shard1",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  shard1c:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard1c
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.33
+    volumes:
+      - shard-data-1c:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet", "shard1",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  # --- Shard 2: replica set из 3 узлов (primary + 2 secondaries) ---
+  shard2a:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard2a
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.31
+    volumes:
+      - shard-data-2a:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet", "shard2",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  shard2b:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard2b
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.34
+    volumes:
+      - shard-data-2b:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet", "shard2",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  shard2c:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard2c
+    restart: always
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.35
+    volumes:
+      - shard-data-2c:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet", "shard2",
+        "--bind_ip_all",
+        "--port", "27017"
+      ]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      start_period: 10s
+
+  mongodb1:
+    container_name: mongodb1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    volumes:
+      - mongodb1_data_container:/data/db
+
+  # --- Redis Cluster: 3 мастера + 3 слейва ---
+  redis_1:
+    image: dh-mirror.gitverse.ru/redis:latest
+    container_name: redis_1
+    restart: always
+    ports:
+      - "6379"
+    volumes:
+      - redis_1_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.2
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      start_period: 5s
+
+  redis_2:
+    image: dh-mirror.gitverse.ru/redis:latest
+    container_name: redis_2
+    restart: always
+    ports:
+      - "6379"
+    volumes:
+      - redis_2_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.3
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      start_period: 5s
+
+  redis_3:
+    image: dh-mirror.gitverse.ru/redis:latest
+    container_name: redis_3
+    restart: always
+    ports:
+      - "6379"
+    volumes:
+      - redis_3_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.4
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      start_period: 5s
+
+  redis_4:
+    image: dh-mirror.gitverse.ru/redis:latest
+    container_name: redis_4
+    restart: always
+    ports:
+      - "6379"
+    volumes:
+      - redis_4_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.5
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      start_period: 5s
+
+  redis_5:
+    image: dh-mirror.gitverse.ru/redis:latest
+    container_name: redis_5
+    restart: always
+    ports:
+      - "6379"
+    volumes:
+      - redis_5_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.6
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      start_period: 5s
+
+  redis_6:
+    image: dh-mirror.gitverse.ru/redis:latest
+    container_name: redis_6
+    restart: always
+    ports:
+      - "6379"
+    volumes:
+      - redis_6_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      start_period: 5s
+
+  redis-cluster-init:
+    image: dh-mirror.gitverse.ru/redis:latest
+    container_name: redis-cluster-init
+    restart: "no"
+    depends_on:
+      redis_1:
+        condition: service_healthy
+      redis_2:
+        condition: service_healthy
+      redis_3:
+        condition: service_healthy
+      redis_4:
+        condition: service_healthy
+      redis_5:
+        condition: service_healthy
+      redis_6:
+        condition: service_healthy
+    networks:
+      app-network:
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        if redis-cli -h 173.17.0.2 -p 6379 cluster info | grep -q 'cluster_state:ok'; then
+          echo "Redis Cluster already initialized";
+        else
+          redis-cli --cluster create 173.17.0.2:6379 173.17.0.3:6379 173.17.0.4:6379 173.17.0.5:6379 173.17.0.6:6379 173.17.0.7:6379 --cluster-replicas 1 --cluster-yes;
+        fi
+
+  sharding-repl-cache:
+    container_name: sharding-repl-cache
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      router1:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_completed_successfully
+    networks:
+      app-network:
+    ports:
+      - "8081:8080"
+    environment:
+      MONGODB_URL: "mongodb://router1:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis_1:6379"
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 173.17.0.0/16
+
+volumes:
+  mongodb1_data_container:
+  config-data-1:
+  config-data-2:
+  config-data-3:
+  shard-data-1a:
+  shard-data-1b:
+  shard-data-1c:
+  shard-data-2a:
+  shard-data-2b:
+  shard-data-2c:
+  redis_1_data: {}
+  redis_2_data: {}
+  redis_3_data: {}
+  redis_4_data: {}
+  redis_5_data: {}
+  redis_6_data: {}
