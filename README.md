@@ -5,16 +5,39 @@
 Запускаем mongodb и приложение
 
 ```shell
-docker compose up -d
+docker compose --project-directory ./sharding-repl-cache/ up -d 
 ```
 
 Заполняем mongodb данными
 
 ```shell
-./scripts/mongo-init.sh
+./sharding-repl-cache/init-sharding.sh
 ```
 
+или
+
+```shell
+./sharding-repl-cache/init-sharding.ps1
+```
+
+*Примечание*. Тестирование bash-скриптов не проводилось, поскольку домашняя машина работает под Windows. Тестировались
+только PowerShell-скрипты.
+
 ## Как проверить
+
+### Наполнение данными и статус кэша
+
+Наполнение данными и статус кэша можно проверить скриптами
+
+```shell
+./sharding-repl-cache/sharding-check.sh
+```
+
+или
+
+```shell
+./sharding-repl-cache/sharding-check.ps1
+```
 
 ### Если вы запускаете проект на локальной машине
 
