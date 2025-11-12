@@ -1,23 +1,188 @@
-services:
-  mongodb1:
-    container_name: mongodb1
-    image: dh-mirror.gitverse.ru/mongo:latest
-    volumes:
-      - mongodb1_data_container:/data/db
+name: mongo-sharding
 
-  pymongo_api:
-    container_name: pymongo_api
+services:
+  # ===================== APPLICATION =====================
+  app-1:
+    container_name: app-1
     build:
       context: api_app
       dockerfile: Dockerfile
-    depends_on:
-      - mongodb1
-    ports:
-      - 8080:8080
     environment:
-      MONGODB_URL: "mongodb://mongodb1"
+      # приложение должно ходить в mongos
+      MONGODB_URL: "mongodb://mongos-router:27017"
       MONGODB_DATABASE_NAME: "somedb"
+    depends_on:
+      mongos-router:
+        condition: service_healthy
+      cluster-init:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
 
+  # ===================== CONFIG SERVERS (RS) =====================
+  configSrv-1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+
+    container_name: configSrv-1
+    command: ["mongod","--configsvr","--replSet","cfgReplSet","--bind_ip_all","--port","27017"]
+    volumes:
+      - cfg1_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL","mongosh --quiet --eval 'db.adminCommand({ping:1})' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  configSrv-2:
+    image: dh-mirror.gitverse.ru/mongo:latest
+
+    container_name: configSrv-2
+    command: ["mongod","--configsvr","--replSet","cfgReplSet","--bind_ip_all","--port","27017"]
+    volumes:
+      - cfg2_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL","mongosh --quiet --eval 'db.adminCommand({ping:1})' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  configSrv-3:
+    image: dh-mirror.gitverse.ru/mongo:latest
+
+    container_name: configSrv-3
+    command: ["mongod","--configsvr","--replSet","cfgReplSet","--bind_ip_all","--port","27017"]
+    volumes:
+      - cfg3_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL","mongosh --quiet --eval 'db.adminCommand({ping:1})' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # ===================== SHARDS (по одному узлу) =====================
+  shard1-1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+
+    container_name: shard1-1
+    command: ["mongod","--shardsvr","--replSet","shard1RS","--bind_ip_all","--port","27018"]
+    volumes:
+      - shard1_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL","mongosh --quiet --port 27018 --eval 'db.adminCommand({ping:1})' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  shard2-1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+
+    container_name: shard2-1
+    command: ["mongod","--shardsvr","--replSet","shard2RS","--bind_ip_all","--port","27018"]
+    volumes:
+      - shard2_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL","mongosh --quiet --port 27018 --eval 'db.adminCommand({ping:1})' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # ===================== Точка входа в кластер mongo =====================
+  mongos-router:
+    image: dh-mirror.gitverse.ru/mongo:latest
+
+    container_name: mongos-router
+    depends_on:
+      configSrv-1:
+        condition: service_healthy
+      configSrv-2:
+        condition: service_healthy
+      configSrv-3:
+        condition: service_healthy
+    command: >
+      bash -lc "
+        mongos --configdb cfgReplSet/configSrv-1:27017,configSrv-2:27017,configSrv-3:27017 --bind_ip_all --port 27017
+      "
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD-SHELL","mongosh --quiet --host mongos-router --eval 'sh.status()' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  # ===================== ONE-SHOT INIT =====================
+  cluster-init:
+    image: dh-mirror.gitverse.ru/mongo:latest
+
+    container_name: cluster-init
+    depends_on:
+      configSrv-1:
+        condition: service_healthy
+      configSrv-2:
+        condition: service_healthy
+      configSrv-3:
+        condition: service_healthy
+      shard1-1:
+        condition: service_healthy
+      shard2-1:
+        condition: service_healthy
+      mongos-router:
+        condition: service_started
+    entrypoint: >
+      bash -lc '
+        echo "===> Initiate cfg RS";
+        mongosh --host configSrv-1:27017 --eval "
+          rs.initiate({
+            _id: \"cfgReplSet\",
+            configsvr: true,
+            members: [
+              { _id: 0, host: \"configSrv-1:27017\" },
+              { _id: 1, host: \"configSrv-2:27017\" },
+              { _id: 2, host: \"configSrv-3:27017\" }
+            ]
+          })
+        ";
+        echo "===> Wait cfg RS PRIMARY";
+        until mongosh --host configSrv-1:27017 --quiet --eval "rs.isMaster().ismaster" | grep -q true; do sleep 2; done;
+
+        echo "===> Initiate shard1RS (single-member)";
+        mongosh --port 27018 --host shard1-1 --eval "
+          rs.initiate({
+            _id: \"shard1RS\",
+            members: [ { _id: 0, host: \"shard1-1:27018\" } ]
+          })
+        ";
+
+        echo "===> Initiate shard2RS (single-member)";
+        mongosh --port 27018 --host shard2-1 --eval "
+          rs.initiate({
+            _id: \"shard2RS\",
+            members: [ { _id: 0, host: \"shard2-1:27018\" } ]
+          })
+        ";
+
+        echo "===> Add shards to mongos";
+        until mongosh --host mongos-router --quiet --eval "db.adminCommand({ping:1}).ok" | grep -q 1; do sleep 2; done;
+        mongosh --host mongos-router --eval "
+          sh.addShard(\"shard1RS/shard1-1:27018\");
+          sh.addShard(\"shard2RS/shard2-1:27018\");
+          sh.enableSharding(\"somedb\");
+          sh.enableSharding(\"config\");
+          sh.shardCollection(\"config.system.sessions\", { _id: 1 });
+          db.getSiblingDB(\"config\").system.sessions.createIndex(
+            { lastUse: 1 }, { expireAfterSeconds: 1800 }
+          );
+          // создаём тестовую БД и коллекцию
+          db = db.getSiblingDB(\"somedb\");
+          db.createCollection(\"helloDoc\");
+        ";
+        echo "===> Cluster initialization complete";
+      '
+    restart: "no"
 
 volumes:
-  mongodb1_data_container:
+  cfg1_data:
+  cfg2_data:
+  cfg3_data:
+  shard1_data:
+  shard2_data:
