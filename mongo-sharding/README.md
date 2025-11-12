@@ -2,7 +2,7 @@
 
 Инструкция по запуску и инициализации MongoDB шардирования.
 
-Проект содержит сервисы `configSrv` (config server), два шарда `shard1` и `shard2` (каждый — replica set в конфигурации), роутер `mongos_router` и простое приложение `pymongo_api`.
+Проект содержит сервисы `configSrv` (config server), два шарда `shard1` и `shard2`, роутер `mongos_router` и простое приложение `pymongo_api`.
 
 
 1. Запускаем контейнеры в директории mongo-sharding
@@ -11,7 +11,7 @@
 docker compose -f compose.yaml up -d
 ```
 
-2. Инициализируем replica set конфигурационного сервера
+2. Инициализируем конфигурационного сервера
 
 ```bash
 docker compose exec -T configSrv mongosh --port 27017 --quiet <<'EOF'
@@ -20,7 +20,7 @@ rs.status()
 EOF
 ```
 
-3. Инициализируем replica set для каждого шарда
+3. Инициализируем каждый шард
 
 Shard1:
 

@@ -1,17 +1,32 @@
-# mongo-sharding
 
-Инструкция по запуску и инициализации MongoDB шардирования.
+# mongo-sharding-repl
 
-Проект содержит сервисы `configSrv` (config server), два шарда `shard1` и `shard2` (каждый — replica set в конфигурации), роутер `mongos_router` и простое приложение `pymongo_api`.
+Инструкция по запуску и инициализации MongoDB шардирования с репликацией.
 
+Эта директория содержит `compose.yaml`, где развернуты:
 
-1. Запускаем контейнеры в директории mongo-sharding
+- 1 x config server: `configSrv` (порт 27017)
+- 2 шарда: `shard1` и `shard2`, каждый реализован как replica set из 3 членов:
+  - shard1: `shard1a`, `shard1b`, `shard1c` (внутренний порт 27018)
+  - shard2: `shard2a`, `shard2b`, `shard2c` (внутренний порт 27019)
+- mongos роутер: `mongos_router` (порт 27020)
+- простое API-приложение `pymongo_api` (доступно на порту 8080 на хосте)
+
+Ключевые порты (хост:контейнер) по умолчанию:
+
+- 8080 -> pymongo_api (API)
+- 27017 -> configSrv
+- 27018 -> shard1a (shard1b/1c проброшены на 27021/27022 соответственно)
+- 27019 -> shard2a (shard2b/2c проброшены на 27023/27024 соответственно)
+- 27020 -> mongos_router
+
+1) Запустить контейнеры из директории mongo-sharding-repl
 
 ```bash
 docker compose -f compose.yaml up -d
 ```
 
-2. Инициализируем replica set конфигурационного сервера
+2) Инициализировать Replica Set для config server
 
 ```bash
 docker compose exec -T configSrv mongosh --port 27017 --quiet <<'EOF'
@@ -20,13 +35,17 @@ rs.status()
 EOF
 ```
 
-3. Инициализируем replica set для каждого шарда
+3) Инициализировать Replica Set для каждого шарда
 
-Shard1:
+Shard1 (выполняется на одном из членов, например на `shard1a`):
 
 ```bash
-docker compose exec -T shard1 mongosh --port 27018 --quiet <<'EOF'
-rs.initiate({_id: 'shard1', members: [{_id: 0, host: 'shard1:27018'}]})
+docker compose exec -T shard1a mongosh --port 27018 --quiet <<'EOF'
+rs.initiate({_id: 'shard1', members: [
+  {_id: 0, host: 'shard1a:27018'},
+  {_id: 1, host: 'shard1b:27018'},
+  {_id: 2, host: 'shard1c:27018'}
+]})
 rs.status()
 EOF
 ```
@@ -34,90 +53,66 @@ EOF
 Shard2:
 
 ```bash
-docker compose exec -T shard2 mongosh --port 27019 --quiet <<'EOF'
-rs.initiate({_id: 'shard2', members: [{_id: 0, host: 'shard2:27019'}]})
+docker compose exec -T shard2a mongosh --port 27019 --quiet <<'EOF'
+rs.initiate({_id: 'shard2', members: [
+  {_id: 0, host: 'shard2a:27019'},
+  {_id: 1, host: 'shard2b:27019'},
+  {_id: 2, host: 'shard2c:27019'}
+]})
 rs.status()
 EOF
 ```
 
-4. Подключиться к mongos и зарегистрировать шарды (addShard)
+4) Зарегистрировать шарды в `mongos`
 
 ```bash
 docker compose exec -T mongos_router mongosh --port 27020 --quiet <<'EOF'
 // проверить соединение
 sh.status()
 
-// добавить шарды (используем имя replica set/host:port)
-sh.addShard('shard1/shard1:27018')
-sh.addShard('shard2/shard2:27019')
+// добавить шарды (указываем replica-set name и адреса членов)
+sh.addShard('shard1/shard1a:27018,shard1b:27018,shard1c:27018')
+sh.addShard('shard2/shard2a:27019,shard2b:27019,shard2c:27019')
 
 // проверить
 sh.status()
 EOF
 ```
 
-5. Включаем шардирование для БД и коллекции
+5) Включить шардирование для БД и коллекции
 
 ```bash
 docker compose exec -T mongos_router mongosh --port 27020 --quiet <<'EOF'
-// Включаем шардирование DB
 sh.enableSharding('somedb')
-
-// Шардируем коллекцию somedb.helloDoc по хешированному ключу _id
 sh.shardCollection('somedb.helloDoc', {_id: 'hashed'})
-
-// Посмотреть статус
 sh.status()
 EOF
 ```
 
-6. Заполняем коллекцию (пример: 2000 документов)
+6) Заполнить коллекцию данными
+
+Используйте подготовленный скрипт:
 
 ```bash
-docker compose exec -T mongos_router mongosh --port 27020 --quiet <<'EOF'
-use somedb
-for (let i=0;i<2000;i++) {
-  db.helloDoc.insertOne({_id: i, value: 'hello_'+i})
-}
-print('done')
-EOF
+./scripts/mongo-init.sh
 ```
 
-7. Проверяем — общее количество и по каждому шару
+Скрипт вставляет 2000 документов через `mongos` — это гарантирует распределение чанков между шардами.
 
-Общее количество (через mongos):
+7) Проверка
+
+- API-приложение доступно по адресу http://localhost:8080/ — в корне JSON с топологией, коллекциями и информацией о шардах.
+- Проверить общее количество документов:
 
 ```bash
-docker compose exec -T mongos_router mongosh --port 27020 --quiet <<'EOF'
-use somedb
-print('total=', db.helloDoc.countDocuments())
-EOF
+curl http://localhost:8080/helloDoc/count
 ```
 
-Количество на каждом шарде — подключаемся к инстансам шардов напрямую и считаем:
-
-Shard1 (порт 27018):
+- Посчитать документы на шарде 1 (например, `shard1a`):
 
 ```bash
-docker compose exec -T shard1 mongosh --port 27018 --quiet <<'EOF'
+docker compose exec -T shard1a mongosh --port 27018 --quiet <<'EOF'
 use somedb
-print('shard1=', db.helloDoc.countDocuments())
-EOF
-```
-
-Shard2 (порт 27019):
-
-```bash
-docker compose exec -T shard2 mongosh --port 27019 --quiet <<'EOF'
-use somedb
-print('shard2=', db.helloDoc.countDocuments())
-EOF
-```
-
-Также можно посмотреть распределение чанков:
-
-```bash
-docker compose exec -T mongos_router mongosh --port 27020 --quiet <<'EOF'
-sh.status()
+print('shard1 member count documents =', db.helloDoc.countDocuments())
 EOF
 ```

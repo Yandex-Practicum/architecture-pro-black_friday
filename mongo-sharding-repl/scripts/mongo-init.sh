@@ -1,11 +1,14 @@
 #!/bin/bash
 
 ###
-# Инициализируем бд
+# Инициализируем бд и заполняем коллекцию данными
 ###
 
-docker compose exec -T mongodb1 mongosh <<EOF
+docker compose -f compose.yaml exec -T mongos_router mongosh --port 27020 <<'EOF'
 use somedb
-for(var i = 0; i < 1000; i++) db.helloDoc.insertOne({age:i, name:"ly"+i})
+for (let i=0;i<2000;i++) {
+  db.helloDoc.insertOne({_id: i, value: 'hello_'+i})
+}
+print('done')
 EOF
 
