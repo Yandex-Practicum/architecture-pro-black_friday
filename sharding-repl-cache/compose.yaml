@@ -1,4 +1,4 @@
-name: mongo-sharding-repl
+name: sharding-repl-cache
 
 services:
   # ===================== APPLICATION =====================
@@ -11,13 +11,30 @@ services:
       # приложение должно ходить в mongos
       MONGODB_URL: "mongodb://mongos-router:27017"
       MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis-1:6379"
     depends_on:
       mongos-router:
         condition: service_healthy
       cluster-init:
         condition: service_completed_successfully
+      redis-1:
+        condition: service_healthy
     ports:
       - "8080:8080"
+
+  # ===================== REDIS =====================
+  redis-1:
+    image: redis:7-alpine
+    container_name: redis-1
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   # ===================== CONFIG SERVERS (RS) =====================
   configSrv-1:
@@ -246,6 +263,7 @@ services:
           db.getSiblingDB(\"config\").system.sessions.createIndex(
             { lastUse: 1 }, { expireAfterSeconds: 1800 }
           );
+      
           // создаём тестовую БД и коллекцию
           db = db.getSiblingDB(\"somedb\");
           db.createCollection(\"helloDoc\");
@@ -266,4 +284,5 @@ volumes:
   shard2_1_data:
   shard2_2_data:
   shard2_3_data:
+  redis_data:
 

@@ -53,11 +53,15 @@ db = client[DATABASE_NAME]
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
 
+# Инициализация Redis клиента
+redis_client = None
+
 @app.on_event("startup")
 async def startup():
+    global redis_client
     if REDIS_URL:
-        redis = aioredis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
-        FastAPICache.init(RedisBackend(redis), prefix="api:cache")
+        redis_client = aioredis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
+        FastAPICache.init(RedisBackend(redis_client), prefix="api:cache")
 
 
 class UserModel(BaseModel):
@@ -80,6 +84,21 @@ class UserCollection(BaseModel):
 
 @app.get("/")
 async def root():
+    cache_key = "root:cluster_stats"
+    
+    # Пытаемся получить данные из кеша
+    if redis_client:
+        try:
+            cached_data = await redis_client.get(cache_key)
+            if cached_data:
+                logger.info("Cache hit for root endpoint")
+                return json.loads(cached_data)
+        except Exception as e:
+            logger.error(f"Error reading from cache: {e}")
+    
+    # Если в кеше нет, получаем данные из MongoDB через mongos-router
+    logger.info("Cache miss - fetching from MongoDB")
+    
     # Получаем общее количество документов в базе
     total_documents = 0
     collection_names = await db.list_collection_names()
@@ -95,20 +114,20 @@ async def root():
     # Получаем информацию о шардах и количестве документов в каждом
     shards_info = {}
     replicas_count = {}
-
+    
     topology_description = client.topology_description
     topology_type = topology_description.topology_type_name
-
+    
     if topology_type == "Sharded":
         try:
             # Получаем список шардов
             shards_list = await client.admin.command("listShards")
-
+            
             # Для каждого шарда получаем статистику
             for shard_info in shards_list.get("shards", []):
                 shard_id = shard_info["_id"]
                 shard_host = shard_info["host"]
-
+                
                 # Определяем количество реплик из host строки
                 if "/" in shard_host:
                     # Формат: replSetName/host1:port,host2:port,host3:port
@@ -116,9 +135,9 @@ async def root():
                     replica_count = len(hosts_part.split(","))
                 else:
                     replica_count = 1
-
+                
                 replicas_count[shard_id] = replica_count
-
+                
                 # Получаем количество документов в шарде
                 # Используем collStats для каждой коллекции и суммируем по шардам
                 shard_docs = 0
@@ -126,7 +145,7 @@ async def root():
                     try:
                         # Получаем статистику коллекции
                         stats = await db.command("collStats", collection_name)
-
+                        
                         # Для шардированных коллекций получаем данные по шардам
                         if "shards" in stats and isinstance(stats["shards"], dict):
                             # Проверяем, есть ли данные для этого шарда
@@ -136,13 +155,13 @@ async def root():
                         # Если коллекция не шардирована, collStats не вернет shards
                         # В этом случае все документы в одном шарде (обычно первом)
                         elif "count" in stats and shard_docs == 0:
-                            # Если это первый шард и коллекция не шардирована,
+                            # Если это первый шард и коллекция не шардирована, 
                             # все документы в нем
                             if shard_id == shards_list.get("shards", [])[0].get("_id"):
                                 shard_docs = stats.get("count", 0)
                     except Exception as e:
                         logger.error(f"Error getting collStats for {collection_name}: {e}")
-
+                
                 # Если не удалось получить через collStats, используем приблизительный метод
                 # Только если shard_docs все еще 0
                 if shard_docs == 0 and total_documents > 0:
@@ -153,12 +172,12 @@ async def root():
                         # Остаток добавляем к первому шарду
                         if shard_id == shards_list.get("shards", [])[0].get("_id"):
                             shard_docs += total_documents % num_shards
-
+                
                 shards_info[shard_id] = {
                     "host": shard_host,
                     "documents_count": shard_docs
                 }
-
+                    
         except Exception as e:
             logger.error(f"Error getting shards info: {e}")
             # Fallback: используем простой метод
@@ -167,20 +186,20 @@ async def root():
                 for shard_info in shards_list.get("shards", []):
                     shard_id = shard_info["_id"]
                     shard_host = shard_info["host"]
-
+                    
                     # Определяем количество реплик
                     if "/" in shard_host:
                         hosts_part = shard_host.split("/")[1]
                         replica_count = len(hosts_part.split(","))
                     else:
                         replica_count = 1
-
+                    
                     replicas_count[shard_id] = replica_count
-
+                    
                     # Приблизительное распределение документов
                     num_shards = len(shards_list.get("shards", []))
                     shard_docs = total_documents // num_shards if num_shards > 0 else 0
-
+                    
                     shards_info[shard_id] = {
                         "host": shard_host,
                         "documents_count": shard_docs
@@ -188,20 +207,37 @@ async def root():
             except Exception as e2:
                 logger.error(f"Error in fallback shards info: {e2}")
 
-    return {
+    result = {
         "total_documents": total_documents,
         "shards": shards_info,
         "replicas_count": replicas_count,
         "collections": collections,
         "status": "OK",
     }
+    
+    # Сохраняем в кеш на 60 секунд
+    if redis_client:
+        try:
+            await redis_client.setex(
+                cache_key,
+                60,  # TTL в секундах
+                json.dumps(result, default=str)
+            )
+            logger.info("Data cached successfully")
+        except Exception as e:
+            logger.error(f"Error writing to cache: {e}")
+    
+    return result
 
 
 @app.get("/{collection_name}/count")
 async def collection_count(collection_name: str):
     collection = db.get_collection(collection_name)
     items_count = await collection.count_documents({})
+    # status = await client.admin.command('replSetGetStatus')
+    # import ipdb; ipdb.set_trace()
     return {"status": "OK", "mongo_db": DATABASE_NAME, "items_count": items_count}
+
 
 @app.get(
     "/{collection_name}/users",
@@ -213,10 +249,40 @@ async def list_users(collection_name: str):
     """
     List all of the user data in the database.
     The response is unpaginated and limited to 1000 results.
+    Uses cache: if data is in cache, returns from cache; otherwise fetches from MongoDB and caches it.
     """
-    time.sleep(1)
+    cache_key = f"users:{collection_name}"
+    
+    # Пытаемся получить данные из кеша
+    if redis_client:
+        try:
+            cached_data = await redis_client.get(cache_key)
+            if cached_data:
+                logger.info(f"Cache hit for users in collection {collection_name}")
+                return UserCollection(**json.loads(cached_data))
+        except Exception as e:
+            logger.error(f"Error reading from cache: {e}")
+    
+    # Если в кеше нет, получаем данные из MongoDB через mongos-router
+    logger.info(f"Cache miss - fetching users from MongoDB for collection {collection_name}")
+    time.sleep(1)  # Симуляция задержки для демонстрации преимуществ кеша
     collection = db.get_collection(collection_name)
-    return UserCollection(users=await collection.find().to_list(1000))
+    users_data = await collection.find().to_list(1000)
+    result = UserCollection(users=users_data)
+    
+    # Сохраняем в кеш на 60 секунд
+    if redis_client:
+        try:
+            await redis_client.setex(
+                cache_key,
+                60,  # TTL в секундах
+                json.dumps(result.model_dump(), default=str)
+            )
+            logger.info(f"Users data cached successfully for collection {collection_name}")
+        except Exception as e:
+            logger.error(f"Error writing to cache: {e}")
+    
+    return result
 
 
 @app.get(
@@ -228,13 +294,43 @@ async def list_users(collection_name: str):
 async def show_user(collection_name: str, name: str):
     """
     Get the record for a specific user, looked up by `name`.
+    Uses cache: if data is in cache, returns from cache; otherwise fetches from MongoDB and caches it.
     """
-
+    cache_key = f"user:{collection_name}:{name}"
+    
+    # Пытаемся получить данные из кеша
+    if redis_client:
+        try:
+            cached_data = await redis_client.get(cache_key)
+            if cached_data:
+                logger.info(f"Cache hit for user {name} in collection {collection_name}")
+                return UserModel(**json.loads(cached_data))
+        except Exception as e:
+            logger.error(f"Error reading from cache: {e}")
+    
+    # Если в кеше нет, получаем данные из MongoDB через mongos-router
+    logger.info(f"Cache miss - fetching user {name} from MongoDB for collection {collection_name}")
     collection = db.get_collection(collection_name)
-    if (user := await collection.find_one({"name": name})) is not None:
-        return user
-
-    raise HTTPException(status_code=404, detail=f"User {name} not found")
+    user = await collection.find_one({"name": name})
+    
+    if user is None:
+        raise HTTPException(status_code=404, detail=f"User {name} not found")
+    
+    result = UserModel(**user)
+    
+    # Сохраняем в кеш на 60 секунд
+    if redis_client:
+        try:
+            await redis_client.setex(
+                cache_key,
+                60,  # TTL в секундах
+                json.dumps(result.model_dump(), default=str)
+            )
+            logger.info(f"User data cached successfully for {name} in collection {collection_name}")
+        except Exception as e:
+            logger.error(f"Error writing to cache: {e}")
+    
+    return result
 
 
 @app.post(
@@ -247,12 +343,25 @@ async def show_user(collection_name: str, name: str):
 async def create_user(collection_name: str, user: UserModel = Body(...)):
     """
     Insert a new user record.
-
-    A unique `id` will be created and provided in the response.
+    Invalidates cache for users list and root endpoint after creating a new user.
     """
     collection = db.get_collection(collection_name)
     new_user = await collection.insert_one(
         user.model_dump(by_alias=True, exclude=["id"])
     )
     created_user = await collection.find_one({"_id": new_user.inserted_id})
-    return created_user
+    result = UserModel(**created_user)
+    
+    # Инвалидируем кеш после создания нового пользователя
+    if redis_client:
+        try:
+            # Удаляем кеш для списка пользователей
+            await redis_client.delete(f"users:{collection_name}")
+            # Удаляем кеш для корневого endpoint (статистика изменилась)
+            await redis_client.delete("root:cluster_stats")
+            logger.info(f"Cache invalidated after creating user in collection {collection_name}")
+        except Exception as e:
+            logger.error(f"Error invalidating cache: {e}")
+    
+    return result
+
