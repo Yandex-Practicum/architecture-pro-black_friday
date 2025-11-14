@@ -175,6 +175,8 @@ services:
           // создаём тестовую БД и коллекцию
           db = db.getSiblingDB(\"somedb\");
           db.createCollection(\"helloDoc\");
+          // Шардируем коллекцию helloDoc по полю _id для равномерного распределения
+          sh.shardCollection(\"somedb.helloDoc\", { _id: \"hashed\" });
         ";
         echo "===> Cluster initialization complete";
       '
