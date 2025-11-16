@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cart",
+  "description": "Схема корзины в приложении 'Мобильный мир'",
+  "type": "object",
+  "required": [
+    "_id",
+    "items",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "_id": {
+      "type": "string",
+      "description": "Уникальный идентификатор корзины"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Идентификатор пользователя (если авторизован)"
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Идентификатор сессии (для гостевых корзин)"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "quantity"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Список товаров в корзине"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "ordered",
+        "abandoned"
+      ],
+      "description": "Статус корзины"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Время создания корзины"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Время последнего обновления"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Время автоматического удаления (TTL)"
+    }
+  },
+  "indexes": [
+    {
+      "key": {
+        "user_id": "hashed"
+      },
+      "name": "user_id_hashed_index",
+      "sparse": true
+    },
+    {
+      "key": {
+        "session_id": "hashed"
+      },
+      "name": "session_id_hashed_index",
+      "sparse": true
+    },
+    {
+      "key": {
+        "status": 1
+      },
+      "name": "status_index"
+    },
+    {
+      "key": {
+        "user_id": 1,
+        "status": 1
+      },
+      "name": "user_status_index"
+    },
+    {
+      "key": {
+        "session_id": 1,
+        "status": 1
+      },
+      "name": "session_status_index"
+    },
+    {
+      "key": {
+        "expires_at": 1
+      },
+      "name": "expires_at_ttl_index",
+      "expireAfterSeconds": 0
+    }
+  ],
+  "shardKey": {
+    "user_id": "hashed"
+  },
+  "validationAction": "warn",
+  "validationLevel": "strict"
+}

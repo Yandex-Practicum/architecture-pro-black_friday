@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Product",
+  "description": "Схема товара в приложении 'Мобильный мир'",
+  "type": "object",
+  "required": [
+    "_id",
+    "name",
+    "category",
+    "price",
+    "inventory"
+  ],
+  "properties": {
+    "_id": {
+      "type": "string",
+      "description": "Уникальный идентификатор товара (UUID)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Наименование товара"
+    },
+    "category": {
+      "type": "string",
+      "description": "Категория товара (например, Электроника, Книги)"
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Цена товара"
+    },
+    "inventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "quantity"
+        ],
+        "properties": {
+          "zone": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "description": "Остатки товара по геозонам"
+    },
+    "attributes": {
+      "type": "object",
+      "description": "Дополнительные атрибуты (цвет, размер и т.п.)",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "indexes": [
+    {
+      "key": {
+        "category": 1
+      },
+      "name": "category_index"
+    },
+    {
+      "key": {
+        "price": 1
+      },
+      "name": "price_index"
+    },
+    {
+      "key": {
+        "category": 1,
+        "price": 1
+      },
+      "name": "category_price_composite_index"
+    }
+  ],
+  "shardKey": {
+    "category": 1
+  }
+}

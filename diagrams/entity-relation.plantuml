@@ -1,0 +1,62 @@
+@startuml
+
+entity "Order" {
+    ' Уникальный идентификатор заказа;
+    _id: UUID
+    ' Идентификатор клиента;
+    user_id: UUID
+    ' Дату и время оформления заказа;
+    created_at: datetime
+    ' Список заказанных товаров и их цену;
+    items: Product[]
+    ' Статус заказа;
+    status: {"pending" | "paid" | "delivered"}
+    ' Общую сумму заказа;
+    total: float
+    ' Геозону заказа.
+    zone: Zone
+}
+
+entity "Product" {
+    ' Уникальный идентификатор товара;
+    _id: UUID
+    ' Наименование;
+    name: string
+    ' Категорию товара;
+    category: string
+    ' Цену;
+    price: float
+    ' Остаток товара в каждой геозоне;
+    stock: Stock[]
+    ' Дополнительные атрибуты (цвет, размер).
+    attributes: JSON
+}
+
+
+
+entity "Cart" {
+     ' Уникальный идентификатор корзины;
+    _id: UUID
+    ' Идентификатор клиента;
+    user_id: UUID
+    ' Идентификатор сессии (для анонимных клиентов);
+    session_id: UUID
+    ' Список товаров и их количество;
+    items: Product[]
+    ' Статус корзины;
+    status: {"active" | "ordered" | "abandoned"}
+    ' Дату и время создания;
+    created_at: datetime
+    ' Дату и время последнего обновления;
+    updated_at: datetime
+    ' Время удаления (TTL) — для автоматической очистки старых корзин.
+    expires_at: datetime
+}
+
+Cart }o--o{ Product : contains
+Order }o--|{ Product : contains
+Product ||--o{ Stock : has
+Stock }o--|| Zone : has
+
+
+@enduml

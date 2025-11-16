@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Order",
+  "description": "Схема заказа в приложении 'Мобильный мир'",
+  "type": "object",
+  "required": [
+    "_id",
+    "user_id",
+    "created_at",
+    "items",
+    "status",
+    "total_amount",
+    "geo_zone"
+  ],
+  "properties": {
+    "_id": {
+      "type": "string",
+      "description": "Уникальный идентификатор заказа (UUID)"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Идентификатор клиента (UUID)"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Дата и время оформления заказа"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Список заказанных товаров"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "shipped",
+        "delivered",
+        "cancelled"
+      ],
+      "description": "Текущий статус заказа"
+    },
+    "total_amount": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Общая сумма заказа"
+    },
+    "geo_zone": {
+      "type": "string",
+      "description": "Геозона заказа (например, Москва, Екатеринбург)"
+    }
+  },
+  "indexes": [
+    {
+      "key": {
+        "user_id": "hashed"
+      },
+      "name": "user_id_hashed_index"
+    },
+    {
+      "key": {
+        "created_at": 1
+      },
+      "name": "created_at_index"
+    },
+    {
+      "key": {
+        "status": 1
+      },
+      "name": "status_index"
+    },
+    {
+      "key": {
+        "geo_zone": 1
+      },
+      "name": "geo_zone_index"
+    }
+  ],
+  "shardKey": {
+    "user_id": "hashed"
+  }
+}
