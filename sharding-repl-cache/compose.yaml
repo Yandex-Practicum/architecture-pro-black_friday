@@ -3,7 +3,7 @@ name: sharding-repl-cache
 services:
   # ===================== APPLICATION =====================
   app-1:
-    container_name: app-1
+    container_name: pymongo-api
     build:
       context: api_app
       dockerfile: Dockerfile
@@ -39,7 +39,6 @@ services:
   # ===================== CONFIG SERVERS (RS) =====================
   configSrv-1:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: configSrv-1
     command: ["mongod","--configsvr","--replSet","cfgReplSet","--bind_ip_all","--port","27017"]
     volumes:
@@ -52,7 +51,6 @@ services:
 
   configSrv-2:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: configSrv-2
     command: ["mongod","--configsvr","--replSet","cfgReplSet","--bind_ip_all","--port","27017"]
     volumes:
@@ -65,7 +63,6 @@ services:
 
   configSrv-3:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: configSrv-3
     command: ["mongod","--configsvr","--replSet","cfgReplSet","--bind_ip_all","--port","27017"]
     volumes:
@@ -80,7 +77,6 @@ services:
   # Shard 1 - Replica Set
   shard1-1:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: shard1-1
     command: ["mongod","--shardsvr","--replSet","shard1RS","--bind_ip_all","--port","27018"]
     volumes:
@@ -93,7 +89,6 @@ services:
 
   shard1-2:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: shard1-2
     command: ["mongod","--shardsvr","--replSet","shard1RS","--bind_ip_all","--port","27018"]
     volumes:
@@ -106,7 +101,6 @@ services:
 
   shard1-3:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: shard1-3
     command: ["mongod","--shardsvr","--replSet","shard1RS","--bind_ip_all","--port","27018"]
     volumes:
@@ -120,7 +114,6 @@ services:
   # Shard 2 - Replica Set
   shard2-1:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: shard2-1
     command: ["mongod","--shardsvr","--replSet","shard2RS","--bind_ip_all","--port","27018"]
     volumes:
@@ -133,7 +126,6 @@ services:
 
   shard2-2:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: shard2-2
     command: ["mongod","--shardsvr","--replSet","shard2RS","--bind_ip_all","--port","27018"]
     volumes:
@@ -146,7 +138,6 @@ services:
 
   shard2-3:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: shard2-3
     command: ["mongod","--shardsvr","--replSet","shard2RS","--bind_ip_all","--port","27018"]
     volumes:
@@ -160,7 +151,6 @@ services:
   # ===================== Точка входа в кластер mongo =====================
   mongos-router:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: mongos-router
     depends_on:
       configSrv-1:
@@ -184,7 +174,6 @@ services:
   # ===================== ONE-SHOT INIT =====================
   cluster-init:
     image: dh-mirror.gitverse.ru/mongo:latest
-
     container_name: cluster-init
     depends_on:
       configSrv-1:
