@@ -16,22 +16,35 @@
 #### Запуск проекта
 
 1. **Запустите все сервисы:**
-   ```bash
-   docker compose up -d
-   ```
+```bash
+docker compose up -d
+```
 
 2. **Дождитесь инициализации кластера:**
-   Проверьте логи сервиса `cluster-init`:
-   ```bash
-   docker compose logs cluster-init
-   ```
-   Дождитесь сообщения `===> Cluster initialization complete`
+Проверьте логи сервиса `cluster-init`:
+```bash
+docker compose logs cluster-init
+```
+Дождитесь сообщения `===> Cluster initialization complete`
 
-3. **Заполните базу данных тестовыми данными (≥ 1000 документов):**
-   ```bash
-   chmod +x scripts/mongo-init.sh
-   ./scripts/mongo-init.sh
-   ```
+3. **Заполнение базы данных тестовыми данными:**
+Заполнение базы данных происходит автоматически через сервис `mongo-data-init` после успешной инициализации кластера. Сервис использует скрипт `scripts/mongo-init.sh`, который автоматически определяет, запущен ли он внутри Docker контейнера или на хосте, и использует соответствующий способ подключения к MongoDB.
+
+Проверьте логи:
+```bash
+docker compose logs mongo-data-init
+```
+Дождитесь сообщения об успешном завершении инициализации данных.
+
+**Примечание:** 
+Если нужно заполнить базу данных вручную, можно использовать скрипт `scripts/mongo-init.sh`:
+```bash
+chmod +x scripts/mongo-init.sh
+./scripts/mongo-init.sh
+```
+
+Скрипт `mongo-init.sh` универсален и работает как внутри Docker контейнера (через прямое подключение к `mongos-router`), так и с хоста (через `docker compose exec`).
+
 
 Проект автоматически настроит все реплика-сеты и добавит шарды в mongos через сервис `cluster-init`.
 ## Проверка работы
