@@ -17,6 +17,8 @@ services:
         condition: service_healthy
       cluster-init:
         condition: service_completed_successfully
+      mongo-data-init:
+        condition: service_completed_successfully
       redis-1:
         condition: service_healthy
     ports:
@@ -171,7 +173,7 @@ services:
       timeout: 5s
       retries: 60
 
-  # ===================== ONE-SHOT INIT =====================
+  # ===================== Инициализация =====================
   cluster-init:
     image: dh-mirror.gitverse.ru/mongo:latest
     container_name: cluster-init
@@ -196,71 +198,22 @@ services:
         condition: service_healthy
       mongos-router:
         condition: service_started
-    entrypoint: >
-      bash -lc '
-        echo "===> Initiate cfg RS";
-        mongosh --host configSrv-1:27017 --eval "
-          rs.initiate({
-            _id: \"cfgReplSet\",
-            configsvr: true,
-            members: [
-              { _id: 0, host: \"configSrv-1:27017\" },
-              { _id: 1, host: \"configSrv-2:27017\" },
-              { _id: 2, host: \"configSrv-3:27017\" }
-            ]
-          })
-        ";
-        echo "===> Wait cfg RS PRIMARY";
-        until mongosh --host configSrv-1:27017 --quiet --eval "rs.isMaster().ismaster" | grep -q true; do sleep 2; done;
-
-        echo "===> Initiate shard1RS (3-member replica set)";
-        mongosh --port 27018 --host shard1-1 --eval "
-          rs.initiate({
-            _id: \"shard1RS\",
-            members: [
-              { _id: 0, host: \"shard1-1:27018\" },
-              { _id: 1, host: \"shard1-2:27018\" },
-              { _id: 2, host: \"shard1-3:27018\" }
-            ]
-          })
-        ";
-        echo "===> Wait shard1RS PRIMARY";
-        until mongosh --port 27018 --host shard1-1 --quiet --eval "rs.isMaster().ismaster" | grep -q true; do sleep 2; done;
-
-        echo "===> Initiate shard2RS (3-member replica set)";
-        mongosh --port 27018 --host shard2-1 --eval "
-          rs.initiate({
-            _id: \"shard2RS\",
-            members: [
-              { _id: 0, host: \"shard2-1:27018\" },
-              { _id: 1, host: \"shard2-2:27018\" },
-              { _id: 2, host: \"shard2-3:27018\" }
-            ]
-          })
-        ";
-        echo "===> Wait shard2RS PRIMARY";
-        until mongosh --port 27018 --host shard2-1 --quiet --eval "rs.isMaster().ismaster" | grep -q true; do sleep 2; done;
-
-        echo "===> Add shards to mongos";
-        until mongosh --host mongos-router --quiet --eval "db.adminCommand({ping:1}).ok" | grep -q 1; do sleep 2; done;
-        mongosh --host mongos-router --eval "
-          sh.addShard(\"shard1RS/shard1-1:27018\");
-          sh.addShard(\"shard2RS/shard2-1:27018\");
-          sh.enableSharding(\"somedb\");
-          sh.enableSharding(\"config\");
-          sh.shardCollection(\"config.system.sessions\", { _id: 1 });
-          db.getSiblingDB(\"config\").system.sessions.createIndex(
-            { lastUse: 1 }, { expireAfterSeconds: 1800 }
-          );
-      
-          // создаём тестовую БД и коллекцию
-          db = db.getSiblingDB(\"somedb\");
-          db.createCollection(\"helloDoc\");
-          // Шардируем коллекцию helloDoc по полю _id для равномерного распределения
-          sh.shardCollection(\"somedb.helloDoc\", { _id: \"hashed\" });
-        ";
-        echo "===> Cluster initialization complete";
-      '
+    volumes:
+      - ./scripts/init-cluster.sh:/init-cluster.sh
+    entrypoint: ["bash", "/init-cluster.sh"]
+    restart: "no"
+  
+  mongo-data-init:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: mongo-data-init
+    depends_on:
+      cluster-init:
+        condition: service_completed_successfully
+      mongos-router:
+        condition: service_started
+    volumes:
+      - ./scripts/mongo-init.sh:/mongo-init.sh
+    entrypoint: ["bash", "/mongo-init.sh"]
     restart: "no"
 
 volumes:
