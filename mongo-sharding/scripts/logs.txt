@@ -1,0 +1,90 @@
+{"asctime": "2025-11-19 21:01:38,049", "process": 1, "levelname": "ERROR", "path": "/", "method": "GET", "reason": "ServerSelectionTimeoutError: mongos_router:27020: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 691e300ed5ec3a11b11823d2, topology_type: Unknown, servers: [<ServerDescription ('mongos_router', 27020) server_type: Unknown, rtt: None, error=AutoReconnect('mongos_router:27020: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>", "exc_info": "Traceback (most recent call last):
+  File \"/usr/local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 159, in call_next
+    message = await recv_stream.receive()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/anyio/streams/memory.py\", line 126, in receive
+    raise EndOfStream from None
+anyio.EndOfStream
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File \"/usr/local/lib/python3.12/site-packages/logmiddleware/middleware.py\", line 125, in _execute_request
+    response: Response = await call_next(request)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 165, in call_next
+    raise app_exc
+  File \"/usr/local/lib/python3.12/site-packages/starlette/middleware/base.py\", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File \"/usr/local/lib/python3.12/site-packages/starlette/middleware/exceptions.py\", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File \"/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 64, in wrapped_app
+    raise exc
+  File \"/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File \"/usr/local/lib/python3.12/site-packages/starlette/routing.py\", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File \"/usr/local/lib/python3.12/site-packages/starlette/routing.py\", line 776, in app
+    await route.handle(scope, receive, send)
+  File \"/usr/local/lib/python3.12/site-packages/starlette/routing.py\", line 297, in handle
+    await self.app(scope, receive, send)
+  File \"/usr/local/lib/python3.12/site-packages/starlette/routing.py\", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File \"/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 64, in wrapped_app
+    raise exc
+  File \"/usr/local/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File \"/usr/local/lib/python3.12/site-packages/starlette/routing.py\", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/fastapi/routing.py\", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/fastapi/routing.py\", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/app/app.py\", line 83, in root
+    collection_names = await db.list_collection_names()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/concurrent/futures/thread.py\", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/database.py\", line 1154, in list_collection_names
+    return [result[\"name\"] for result in self.list_collections(session=session, **kwargs)]
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/database.py\", line 1105, in list_collections
+    return self.__client._retryable_read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/mongo_client.py\", line 1540, in _retryable_read
+    return self._retry_internal(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/_csot.py\", line 108, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/mongo_client.py\", line 1507, in _retry_internal
+    ).run()
+      ^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/mongo_client.py\", line 2353, in run
+    return self._read() if self._is_read else self._write()
+           ^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/mongo_client.py\", line 2483, in _read
+    self._server = self._get_server()
+                   ^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/mongo_client.py\", line 2439, in _get_server
+    return self._client._select_server(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/mongo_client.py\", line 1322, in _select_server
+    server = topology.select_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/topology.py\", line 368, in select_server
+    server = self._select_server(
+             ^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/topology.py\", line 346, in _select_server
+    servers = self.select_servers(
+              ^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/topology.py\", line 253, in select_servers
+    server_descriptions = self._select_servers_loop(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File \"/usr/local/lib/python3.12/site-packages/pymongo/topology.py\", line 303, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: mongos_router:27020: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 30s, Topology Description: <TopologyDescription id: 691e300ed5ec3a11b11823d2, topology_type: Unknown, servers: [<ServerDescription ('mongos_router', 27020) server_type: Unknown, rtt: None, error=AutoReconnect('mongos_router:27020: [Errno 111] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>"}
