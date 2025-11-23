@@ -1,0 +1,16 @@
+{
+  "_id": ObjectId,                // Уникальный идентификатор заказа
+  "user_id": ObjectId,          // Идентификатор клиента
+  "created_at": ISODate,       // Дата и время оформления заказа
+  "items": [                     // Список заказанных товаров
+    {
+      "product_id": ObjectId,
+      "quantity": Number,
+      "price": Decimal128         // Цена на момент заказа
+    }
+  ],
+  "status": String,               // Статус заказа (например, "paid", "shipped")
+  "total_amount": Decimal128,   // Общая сумма заказа
+  "geo_zone": String,           // Геозона заказа (например, "moscow")
+  "updated_at": ISODate          // Дата последнего обновления статуса
+}

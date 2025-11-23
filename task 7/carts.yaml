@@ -1,0 +1,15 @@
+{
+  "_id": ObjectId,                // Уникальный идентификатор корзины
+  "user_id": ObjectId,          // Идентификатор пользователя (null для гостей)
+  "session_id": String,          // session_id для гостей
+  "items": [                     // Список товаров в корзине
+    {
+      "product_id": ObjectId,
+      "quantity": Number
+    }
+  ],
+  "status": String,               // Статус: "active", "ordered", "abandoned"
+  "created_at": ISODate,        // Дата создания
+  "updated_at": ISODate,        // Дата последнего обновления
+  "expires_at": ISODate         // Время удаления (TTL)
+}

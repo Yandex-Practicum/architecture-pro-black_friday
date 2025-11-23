@@ -1,0 +1,19 @@
+{
+  "_id": ObjectId,                // Уникальный идентификатор товара
+  "name": String,               // Наименование
+  "category": String,             // Категория товара (например, "Электроника")
+  "price": Decimal128,          // Цена (с точностью до копеек)
+  "stock_by_zone": {             // Остаток по геозонам
+    "moscow": Number,
+    "ekaterinburg": Number,
+    "kaliningrad": Number
+    // ... другие геозоны
+  },
+  "attributes": {                 // Дополнительные атрибуты
+    "color": String,
+    "size": String
+    // ... другие атрибуты
+  },
+  "created_at": ISODate,        // Дата создания
+  "updated_at": ISODate         // Дата последнего обновления
+}
