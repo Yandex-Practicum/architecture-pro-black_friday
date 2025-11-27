@@ -1,14 +1,8 @@
 # pymongo-api
 
-## Как запустить
+## Запуск
 
-Запускаем mongodb и приложение
-
-```shell
-docker compose up -d
-```
-
-Заполняем mongodb данными
+Вызвать команду:
 
 ```shell
 ./scripts/mongo-init.sh
@@ -16,6 +10,4 @@ docker compose up -d
 
 ## Как проверить
 
-### Если вы запускаете проект на локальной машине
-
-Откройте в браузере http://localhost:8080
+...

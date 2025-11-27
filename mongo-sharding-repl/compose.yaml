@@ -1,0 +1,130 @@
+services:
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - router
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://router:27024"
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+      - app-network
+
+  config:
+    image: mongo:latest
+    container_name: config
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - app-network
+    volumes:
+      - config-data:/data/db
+    command:
+      ["--configsvr", "--replSet", "config_server", "--bind_ip_all", "--port", "27017"]
+
+  shard1-1:
+    image: mongo:latest
+    container_name: shard1-1
+    restart: always
+    ports:
+      - "27018:27018"
+    networks:
+      - app-network
+    volumes:
+      - shard1-1-data:/data/db
+    command:
+      ["--shardsvr", "--replSet", "shard1", "--bind_ip_all", "--port", "27018"]
+
+  shard1-2:
+    image: mongo:latest
+    container_name: shard1-2
+    restart: always
+    ports:
+      - "27019:27019"
+    networks:
+      - app-network
+    volumes:
+      - shard1-2-data:/data/db
+    command:
+      ["--shardsvr", "--replSet", "shard1", "--bind_ip_all", "--port", "27019"]
+
+  shard1-3:
+    image: mongo:latest
+    container_name: shard1-3
+    restart: always
+    ports:
+      - "27020:27020"
+    networks:
+      - app-network
+    volumes:
+      - shard1-3-data:/data/db
+    command:
+      ["--shardsvr", "--replSet", "shard1", "--bind_ip_all", "--port", "27020"]
+
+  shard2-1:
+    image: mongo:latest
+    container_name: shard2-1
+    restart: always
+    ports:
+      - "27021:27021"
+    networks:
+      - app-network
+    volumes:
+      - shard2-1-data:/data/db
+    command:
+      ["--shardsvr", "--replSet", "shard2", "--bind_ip_all", "--port", "27021"]
+
+  shard2-2:
+    image: mongo:latest
+    container_name: shard2-2
+    restart: always
+    ports:
+      - "27022:27022"
+    networks:
+      - app-network
+    volumes:
+      - shard2-2-data:/data/db
+    command:
+      ["--shardsvr", "--replSet", "shard2", "--bind_ip_all", "--port", "27022"]
+
+  shard2-3:
+    image: mongo:latest
+    container_name: shard2-3
+    restart: always
+    ports:
+      - "27023:27023"
+    networks:
+      - app-network
+    volumes:
+      - shard2-3-data:/data/db
+    command:
+      [ "--shardsvr", "--replSet", "shard2", "--bind_ip_all", "--port", "27023"]
+
+  router:
+    image: mongo:latest
+    container_name: router
+    restart: always
+    ports:
+      - "27024:27024"
+    networks:
+      - app-network
+    command:
+      ["mongos", "--configdb", "config_server/config:27017", "--bind_ip_all", "--port", "27024"]
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  config-data:
+  shard1-1-data:
+  shard1-2-data:
+  shard1-3-data:
+  shard2-1-data:
+  shard2-2-data:
+  shard2-3-data:
