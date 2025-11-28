@@ -10,7 +10,7 @@ wait_mongo() {
   echo "✅ $container_name ($port) готов."
 }
 
-echo "Запуск контейнеры..."
+echo "Запуск контейнеров..."
 docker compose up -d
 sleep 3
 echo "✅Контейнеры запущены"
@@ -78,4 +78,4 @@ print("Количество документов:", db.helloDoc.countDocuments()
 EOF
 sleep 3
 echo "✅Router инициализирован"
-echo "✅Кластер  инициализирован"
+echo "✅Кластер инициализирован"

@@ -82,6 +82,7 @@ for (var i = 0; i < 1000; i++) {
 }
 print("Количество документов:", db.helloDoc.countDocuments());
 EOF
+
 sleep 3
 echo "✅Router инициализирован"
 echo "✅Кластер инициализирован"
