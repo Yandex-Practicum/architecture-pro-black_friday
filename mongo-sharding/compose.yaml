@@ -1,0 +1,175 @@
+services:
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - router01
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://mongodb1"
+      MONGODB_DATABASE_NAME: "somedb"
+  ## Router
+  router01:
+    image: mongo:latest
+    container_name: router-01
+    ports:
+      - "27117:27017"
+    restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_router01_db:/data/db
+      - mongodb_cluster_router01_config:/data/configdb
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-route.sh"]
+
+  ## Config Servers
+  configsvr01:
+    image: mongo:latest
+    container_name: mongo-config-01
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_configsvr01_db:/data/db
+      - mongodb_cluster_configsvr01_config:/data/configdb
+    restart: always
+    entrypoint: ["/scripts/entrypoint-configserver.sh"]
+
+  configsvr02:
+    image: mongo:latest
+    container_name: mongo-config-02
+    command: mongod --port 27017 --configsvr --replSet rs-config-server
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_configsvr02_db:/data/db
+      - mongodb_cluster_configsvr02_config:/data/configdb
+    restart: always
+
+  configsvr03:
+    image: mongo:latest
+    container_name: mongo-config-03
+    command: mongod --port 27017 --configsvr --replSet rs-config-server
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_configsvr03_db:/data/db
+      - mongodb_cluster_configsvr03_config:/data/configdb
+    restart: always
+
+  ## Shards
+  shard01-a:
+    image: mongo:latest
+    container_name: shard-01-node-a
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard01_a_db:/data/db
+      - mongodb_cluster_shard01_a_config:/data/configdb
+    restart: always
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-shard01.sh"]
+
+  shard01-b:
+    image: mongo:latest
+    container_name: shard-01-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-01
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard01_b_db:/data/db
+      - mongodb_cluster_shard01_b_config:/data/configdb
+    restart: always
+
+  shard01-c:
+    image: mongo:latest
+    container_name: shard-01-node-c
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-01
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard01_c_db:/data/db
+      - mongodb_cluster_shard01_c_config:/data/configdb
+    restart: always
+
+  shard02-a:
+    image: mongo:latest
+    container_name: shard-02-node-a
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard02_a_db:/data/db
+      - mongodb_cluster_shard02_a_config:/data/configdb
+    restart: always
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-shard02.sh"]
+
+  shard02-b:
+    image: mongo:latest
+    container_name: shard-02-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-02
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard02_b_db:/data/db
+      - mongodb_cluster_shard02_b_config:/data/configdb
+    restart: always
+
+  shard02-c:
+    image: mongo:latest
+    container_name: shard-02-node-c
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-02
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard02_c_db:/data/db
+      - mongodb_cluster_shard02_c_config:/data/configdb
+    restart: always
+
+  shard03-a:
+    image: mongo:latest
+    container_name: shard-03-node-a
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard03_a_db:/data/db
+      - mongodb_cluster_shard03_a_config:/data/configdb
+    restart: always
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-shard03.sh"]
+
+  shard03-b:
+    image: mongo:latest
+    container_name: shard-03-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-03
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard03_b_db:/data/db
+      - mongodb_cluster_shard03_b_config:/data/configdb
+    restart: always
+
+  shard03-c:
+    image: mongo:latest
+    container_name: shard-03-node-c
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-03
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard03_c_db:/data/db
+      - mongodb_cluster_shard03_c_config:/data/configdb
+    restart: always
+
+volumes:
+  mongodb_cluster_router01_db:
+  mongodb_cluster_router01_config:
+  mongodb_cluster_configsvr01_db:
+  mongodb_cluster_configsvr01_config:
+  mongodb_cluster_configsvr02_db:
+  mongodb_cluster_configsvr02_config:
+  mongodb_cluster_configsvr03_db:
+  mongodb_cluster_configsvr03_config:
+  mongodb_cluster_shard01_a_db:
+  mongodb_cluster_shard01_a_config:
+  mongodb_cluster_shard01_b_db:
+  mongodb_cluster_shard01_b_config:
+  mongodb_cluster_shard01_c_db:
+  mongodb_cluster_shard01_c_config:
+  mongodb_cluster_shard02_a_db:
+  mongodb_cluster_shard02_a_config:
+  mongodb_cluster_shard02_b_db:
+  mongodb_cluster_shard02_b_config:
+  mongodb_cluster_shard02_c_db:
+  mongodb_cluster_shard02_c_config:
+  mongodb_cluster_shard03_a_db:
+  mongodb_cluster_shard03_a_config:
+  mongodb_cluster_shard03_b_db:
+  mongodb_cluster_shard03_b_config:
+  mongodb_cluster_shard03_c_db:
+  mongodb_cluster_shard03_c_config:
