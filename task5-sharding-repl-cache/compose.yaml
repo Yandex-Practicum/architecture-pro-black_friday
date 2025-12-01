@@ -1,0 +1,303 @@
+services:
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      router01:
+        condition: service_healthy
+      redis-control:
+        condition: service_completed_successfully
+    ports:
+      - 8080:8080
+    environment:
+      # Connect API to the mongos router of the sharded cluster
+      MONGODB_URL: "mongodb://router01:27017/?directConnection=false"
+      MONGODB_DATABASE_NAME: "somedb"
+      # Enable caching via Redis inside the same Docker network
+      REDIS_URL: "redis://redis01:6379"
+  ## Router
+  router01:
+    image: mongo:latest
+    container_name: router-01
+    hostname: router01
+    ports:
+      - "27117:27017"
+    restart: always
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_router01_db:/data/db
+      - mongodb_cluster_router01_config:/data/configdb
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-route.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --host 127.0.0.1 --port 27017 --quiet --eval 'db.adminCommand({ ping: 1 })' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  ## Config Servers
+  configsvr01:
+    image: mongo:latest
+    container_name: mongo-config-01
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_configsvr01_db:/data/db
+      - mongodb_cluster_configsvr01_config:/data/configdb
+    restart: always
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-configserver.sh"]
+
+  configsvr02:
+    image: mongo:latest
+    container_name: mongo-config-02
+    command: mongod --port 27017 --configsvr --replSet rs-config-server
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_configsvr02_db:/data/db
+      - mongodb_cluster_configsvr02_config:/data/configdb
+    restart: always
+
+  configsvr03:
+    image: mongo:latest
+    container_name: mongo-config-03
+    command: mongod --port 27017 --configsvr --replSet rs-config-server
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_configsvr03_db:/data/db
+      - mongodb_cluster_configsvr03_config:/data/configdb
+    restart: always
+
+  ## Shards
+  shard01-a:
+    image: mongo:latest
+    container_name: shard-01-node-a
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard01_a_db:/data/db
+      - mongodb_cluster_shard01_a_config:/data/configdb
+    restart: always
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-shard01.sh"]
+
+  shard01-b:
+    image: mongo:latest
+    container_name: shard-01-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-01
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard01_b_db:/data/db
+      - mongodb_cluster_shard01_b_config:/data/configdb
+    restart: always
+
+  shard01-c:
+    image: mongo:latest
+    container_name: shard-01-node-c
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-01
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard01_c_db:/data/db
+      - mongodb_cluster_shard01_c_config:/data/configdb
+    restart: always
+
+  shard02-a:
+    image: mongo:latest
+    container_name: shard-02-node-a
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard02_a_db:/data/db
+      - mongodb_cluster_shard02_a_config:/data/configdb
+    restart: always
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-shard02.sh"]
+
+  shard02-b:
+    image: mongo:latest
+    container_name: shard-02-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-02
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard02_b_db:/data/db
+      - mongodb_cluster_shard02_b_config:/data/configdb
+    restart: always
+
+  shard02-c:
+    image: mongo:latest
+    container_name: shard-02-node-c
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-02
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard02_c_db:/data/db
+      - mongodb_cluster_shard02_c_config:/data/configdb
+    restart: always
+
+  shard03-a:
+    image: mongo:latest
+    container_name: shard-03-node-a
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard03_a_db:/data/db
+      - mongodb_cluster_shard03_a_config:/data/configdb
+    restart: always
+    entrypoint: ["/bin/bash", "/scripts/entrypoint-shard03.sh"]
+
+  shard03-b:
+    image: mongo:latest
+    container_name: shard-03-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-03
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard03_b_db:/data/db
+      - mongodb_cluster_shard03_b_config:/data/configdb
+    restart: always
+
+  shard03-c:
+    image: mongo:latest
+    container_name: shard-03-node-c
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-03
+    volumes:
+      - ./scripts:/scripts
+      - mongodb_cluster_shard03_c_db:/data/db
+      - mongodb_cluster_shard03_c_config:/data/configdb
+    restart: always
+
+  redis01:
+    image: "redis:latest"
+    container_name: redis01
+    ports:
+      - "6379"
+    volumes:
+      - redis01_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis02:
+    image: "redis:latest"
+    container_name: redis02
+    ports:
+      - "6379"
+    volumes:
+      - redis02_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis03:
+    image: "redis:latest"
+    container_name: redis03
+    ports:
+      - "6379"
+    volumes:
+      - redis03_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  redis04:
+    image: "redis:latest"
+    container_name: redis04
+    ports:
+      - "6379"
+    volumes:
+      - redis04_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis05:
+    image: "redis:latest"
+    container_name: redis05
+    ports:
+      - "6379"
+    volumes:
+      - redis05_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis06:
+    image: "redis:latest"
+    container_name: redis06
+    ports:
+      - "6379"
+    volumes:
+      - redis06_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+  redis-control:
+    container_name: redis-control
+    build:
+      context: .
+      dockerfile: redisInitDockerfile.dockerfile
+    depends_on:
+      redis01:
+        condition: service_healthy
+      redis02:
+        condition: service_healthy
+      redis03:
+        condition: service_healthy
+      redis04:
+        condition: service_healthy
+      redis05:
+        condition: service_healthy
+      redis06:
+        condition: service_healthy
+
+volumes:
+  mongodb_cluster_router01_db:
+  mongodb_cluster_router01_config:
+  mongodb_cluster_configsvr01_db:
+  mongodb_cluster_configsvr01_config:
+  mongodb_cluster_configsvr02_db:
+  mongodb_cluster_configsvr02_config:
+  mongodb_cluster_configsvr03_db:
+  mongodb_cluster_configsvr03_config:
+  mongodb_cluster_shard01_a_db:
+  mongodb_cluster_shard01_a_config:
+  mongodb_cluster_shard01_b_db:
+  mongodb_cluster_shard01_b_config:
+  mongodb_cluster_shard01_c_db:
+  mongodb_cluster_shard01_c_config:
+  mongodb_cluster_shard02_a_db:
+  mongodb_cluster_shard02_a_config:
+  mongodb_cluster_shard02_b_db:
+  mongodb_cluster_shard02_b_config:
+  mongodb_cluster_shard02_c_db:
+  mongodb_cluster_shard02_c_config:
+  mongodb_cluster_shard03_a_db:
+  mongodb_cluster_shard03_a_config:
+  mongodb_cluster_shard03_b_db:
+  mongodb_cluster_shard03_b_config:
+  mongodb_cluster_shard03_c_db:
+  mongodb_cluster_shard03_c_config:
+  redis01_data:
+  redis02_data:
+  redis03_data:
+  redis04_data:
+  redis05_data:
+  redis06_data:
