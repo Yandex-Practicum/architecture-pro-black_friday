@@ -15,9 +15,15 @@ services:
     ports:
       - 8080:8080
     environment:
-      MONGODB_URL: "mongodb://mongodb1"
+      MONGODB_URL: "mongodb://router01:27017/?directConnection=false"
       MONGODB_DATABASE_NAME: "somedb"
+    networks:
+      - mongo-sharding_default
 
 
 volumes:
   mongodb1_data_container:
+
+networks:
+  mongo-sharding_default:
+    external: true

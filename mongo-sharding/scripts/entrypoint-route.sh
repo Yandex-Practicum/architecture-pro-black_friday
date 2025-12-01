@@ -39,7 +39,21 @@ sh.addShard("rs-shard-02/shard02-c:27017")
 sh.addShard("rs-shard-03/shard03-a:27017")
 sh.addShard("rs-shard-03/shard03-b:27017")
 sh.addShard("rs-shard-03/shard03-c:27017")
+
+use somedb
+// Используем insertOne, так как insert() устарел, и для асинхронной операции в цикле
+for(var i = 0; i < 1000; i++) db.somedb.insertOne({age:i, name:"ly"+i})
+
+var count = db.somedb.countDocuments();
+print("Документов добавлено: " + count);
+
+if (count === 1000) {
+    print("🚀 Кластер успешно инициирован и протестирован!");
+} else {
+    print("💔 ОШИБКА: Добавлено неправильное количество документов: " + count);
+}
 EOF
+
 
 # Keep the mongos process running in the foreground
 wait
