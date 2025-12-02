@@ -7,8 +7,8 @@ services:
     depends_on:
       router01:
         condition: service_healthy
-      redis-control:
-        condition: service_completed_successfully
+      redis333:
+        condition: service_healthy
     ports:
       - 8080:8080
     environment:
@@ -16,11 +16,11 @@ services:
       MONGODB_URL: "mongodb://router01:27017/?directConnection=false"
       MONGODB_DATABASE_NAME: "somedb"
       # Enable caching via Redis inside the same Docker network
-      REDIS_URL: "redis://redis01:6379"
+      REDIS_URL: "redis://redis333:6379"
   ## Router
   router01:
     image: mongo:latest
-    container_name: router-01
+    container_name: router01
     hostname: router01
     ports:
       - "27117:27017"
@@ -159,114 +159,33 @@ services:
       - mongodb_cluster_shard03_c_config:/data/configdb
     restart: always
 
-  redis01:
-    image: "redis:latest"
-    container_name: redis01
+#  redis01:
+#    image: "redis:latest"
+#    container_name: redis01
+#    ports:
+#      - "6379"
+#    volumes:
+#      - redis01_data:/data
+#      - ./redis.conf:/usr/local/etc/redis/redis.conf
+#    user: "root"
+#    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+#    healthcheck:
+#      test: ["CMD", "redis-cli", "ping"]
+#      interval: 5s
+#      timeout: 3s
+#      retries: 5
+
+  redis333:
+    container_name: redis333
+    image: redis:latest
     ports:
-      - "6379"
-    volumes:
-      - redis01_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  redis02:
-    image: "redis:latest"
-    container_name: redis02
-    ports:
-      - "6379"
-    volumes:
-      - redis02_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  redis03:
-    image: "redis:latest"
-    container_name: redis03
-    ports:
-      - "6379"
-    volumes:
-      - redis03_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-  redis04:
-    image: "redis:latest"
-    container_name: redis04
-    ports:
-      - "6379"
-    volumes:
-      - redis04_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  redis05:
-    image: "redis:latest"
-    container_name: redis05
-    ports:
-      - "6379"
-    volumes:
-      - redis05_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  redis06:
-    image: "redis:latest"
-    container_name: redis06
-    ports:
-      - "6379"
-    volumes:
-      - redis06_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-
-  redis-control:
-    container_name: redis-control
-    build:
-      context: .
-      dockerfile: redisInitDockerfile.dockerfile
-    depends_on:
-      redis01:
-        condition: service_healthy
-      redis02:
-        condition: service_healthy
-      redis03:
-        condition: service_healthy
-      redis04:
-        condition: service_healthy
-      redis05:
-        condition: service_healthy
-      redis06:
-        condition: service_healthy
 
 volumes:
   mongodb_cluster_router01_db:
@@ -296,8 +215,3 @@ volumes:
   mongodb_cluster_shard03_c_db:
   mongodb_cluster_shard03_c_config:
   redis01_data:
-  redis02_data:
-  redis03_data:
-  redis04_data:
-  redis05_data:
-  redis06_data:
