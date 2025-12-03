@@ -1,0 +1,24 @@
+{
+    "mongo_topology_type": "Single",
+    "mongo_replicaset_name": null,
+    "mongo_db": "somedb",
+    "read_preference": "Primary()",
+    "mongo_nodes": [
+        [
+            "mongodb1",
+            27017
+        ]
+    ],  
+    "mongo_primary_host": null,
+    "mongo_secondary_hosts": [],
+    "mongo_is_primary": true,
+    "mongo_is_mongos": false,
+    "collections": {
+        "helloDoc": {
+            "documents_count": 1000
+        }
+    },
+    "shards": null,
+    "cache_enabled": false,
+    "status": "OK"
+}
