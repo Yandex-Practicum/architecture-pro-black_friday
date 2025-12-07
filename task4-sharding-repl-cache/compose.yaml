@@ -12,12 +12,9 @@ services:
     ports:
       - 8080:8080
     environment:
-      # Connect API to the mongos router of the sharded cluster
       MONGODB_URL: "mongodb://router01:27017/?directConnection=false"
       MONGODB_DATABASE_NAME: "somedb"
-      # Enable caching via Redis inside the same Docker network
       REDIS_URL: "redis://redis333:6379"
-  ## Router
   router01:
     image: mongo:latest
     container_name: router01
@@ -37,7 +34,6 @@ services:
       retries: 12
       start_period: 10s
 
-  ## Config Servers
   configsvr01:
     image: mongo:latest
     container_name: mongo-config-01
@@ -68,7 +64,6 @@ services:
       - mongodb_cluster_configsvr03_config:/data/configdb
     restart: always
 
-  ## Shards
   shard01-a:
     image: mongo:latest
     container_name: shard-01-node-a
@@ -158,22 +153,6 @@ services:
       - mongodb_cluster_shard03_c_db:/data/db
       - mongodb_cluster_shard03_c_config:/data/configdb
     restart: always
-
-#  redis01:
-#    image: "redis:latest"
-#    container_name: redis01
-#    ports:
-#      - "6379"
-#    volumes:
-#      - redis01_data:/data
-#      - ./redis.conf:/usr/local/etc/redis/redis.conf
-#    user: "root"
-#    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
-#    healthcheck:
-#      test: ["CMD", "redis-cli", "ping"]
-#      interval: 5s
-#      timeout: 3s
-#      retries: 5
 
   redis333:
     container_name: redis333

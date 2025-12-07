@@ -10,10 +10,9 @@ services:
     ports:
       - 8080:8080
     environment:
-      # Connect API to the mongos router of the sharded cluster
       MONGODB_URL: "mongodb://router01:27017/?directConnection=false"
       MONGODB_DATABASE_NAME: "somedb"
-  ## Router
+
   router01:
     image: mongo:latest
     container_name: router-01
@@ -33,7 +32,7 @@ services:
       retries: 12
       start_period: 10s
 
-  ## Config Servers
+
   configsvr01:
     image: mongo:latest
     container_name: mongo-config-01
@@ -64,7 +63,6 @@ services:
       - mongodb_cluster_configsvr03_config:/data/configdb
     restart: always
 
-  ## Shards
   shard01-a:
     image: mongo:latest
     container_name: shard-01-node-a
