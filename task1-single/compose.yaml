@@ -7,9 +7,9 @@ services:
 
   pymongo_api:
     container_name: pymongo_api
-    build: 
+    build:
       context: api_app
-      dockerfile: Dockerfile
+      dockerfile: api_app/Dockerfile
     depends_on:
       - mongodb1
     ports:
