@@ -10,12 +10,23 @@
   ```cd task2-mongo-sharding```
   - запуск:
   ```docker compose up -d```
-  - Инициализация: 
+  - Инициализация (идемпотентная операция): 
   ```./scripts/mongo-sharding-init.sh```
   - Наполненение:
     ```./scripts/mongo-init.sh```
 
 ## Задание 3. Репликация
+- [ReadMe](./task3-mongo-sharding-repl/README.md)
+- Короткая альтернатива:
+  - в каталоги задания:
+    ```cd task3-mongo-sharding-repl```
+  - запуск:
+    ```docker compose up -d```
+  - Инициализация (идемпотентная операция):
+    ```./scripts/mongo-sharding-repl-init.sh```
+  - Наполненение:
+    ```./scripts/mongo-init.sh```
+
 ## Задание 4. Кеширование
 ## Задание 5. Service Discovery и балансировка с API Gateway
 ## Задание 6. CDN
