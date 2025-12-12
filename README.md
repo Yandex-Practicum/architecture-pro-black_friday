@@ -54,4 +54,6 @@
 - [hot_shards_mitigation](./task8-hot-shards/hot_shards_mitigation.md)
 
 ## Задание 9. Настройка чтения с реплик и консистентность
+- [read_pref_consistency](./task9-read-pref/read_pref_consistency.md)
+
 ## Задание 10. Миграция на Cassandra: модель данных, стратегии репликации и шардирования
