@@ -51,5 +51,7 @@
 - [sharding_collections_design](./task7-sharding/sharding_collections_design.md)
 
 ## Задание 8. Выявление и устранение «горячих» шардов
+- [hot_shards_mitigation](./task8-hot-shards/hot_shards_mitigation.md)
+
 ## Задание 9. Настройка чтения с реплик и консистентность
 ## Задание 10. Миграция на Cassandra: модель данных, стратегии репликации и шардирования
