@@ -42,7 +42,11 @@
 ```time curl -s http://localhost:8080/helloDoc/users > /dev/null```
 
 ## Задание 5. Service Discovery и балансировка с API Gateway
+- [Sharding-Replication-Redis](./task5-Service-Discovery/task5_scaling_gateway_consul.jpg)
+
 ## Задание 6. CDN
+- [CDN](./task6-CDN/task6_CDN.jpg)
+
 ## Задание 7. Проектирование схем коллекций для шардирования данных
 ## Задание 8. Выявление и устранение «горячих» шардов
 ## Задание 9. Настройка чтения с реплик и консистентность
