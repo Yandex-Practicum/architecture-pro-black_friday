@@ -6,7 +6,7 @@
 ## Задание 2. Шардирование
 - [ReadMe](./task2-mongo-sharding/README.md)
 - Короткая альтернатива:
-  - в каталоги задания:
+  - в каталог задания:
   ```cd task2-mongo-sharding```
   - запуск:
   ```docker compose up -d```
@@ -18,7 +18,7 @@
 ## Задание 3. Репликация
 - [ReadMe](./task3-mongo-sharding-repl/README.md)
 - Короткая альтернатива:
-  - в каталоги задания:
+  - в каталог задания:
     ```cd task3-mongo-sharding-repl```
   - запуск:
     ```docker compose up -d```
@@ -28,6 +28,19 @@
     ```./scripts/mongo-init.sh```
 
 ## Задание 4. Кеширование
+- [ReadMe](./task4-sharding-repl-cache/README.md)
+- Короткая альтернатива:
+  - в каталог задания:
+    ```cd task4-sharding-repl-cache```
+  - запуск:
+    ```docker compose up -d```
+  - Инициализация (идемпотентная операция):
+    ```./scripts/mongo-sharding-repl-init.sh```
+  - Наполненение:
+    ```./scripts/mongo-init.sh```
+  - Проверка (см время отклика первого и последующих):
+```time curl -s http://localhost:8080/helloDoc/users > /dev/null```
+
 ## Задание 5. Service Discovery и балансировка с API Gateway
 ## Задание 6. CDN
 ## Задание 7. Проектирование схем коллекций для шардирования данных

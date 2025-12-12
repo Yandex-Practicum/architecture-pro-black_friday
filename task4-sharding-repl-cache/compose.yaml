@@ -1,0 +1,131 @@
+name: sharding-repl-cache
+
+services:
+  # Config servers replica set (configReplSet)
+  configsvr1:
+    container_name: configsvr1
+    image: mongo:latest
+    command: >
+      mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - configsvr1_data:/data/db
+
+  configsvr2:
+    container_name: configsvr2
+    image: mongo:latest
+    command: >
+      mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - configsvr2_data:/data/db
+
+  configsvr3:
+    container_name: configsvr3
+    image: mongo:latest
+    command: >
+      mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - configsvr3_data:/data/db
+
+  # Shard1 replica set (3 members)
+  shard1-1:
+    container_name: shard1-1
+    image: mongo:latest
+    command: >
+      mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard1_1_data:/data/db
+
+  shard1-2:
+    container_name: shard1-2
+    image: mongo:latest
+    command: >
+      mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard1_2_data:/data/db
+
+  shard1-3:
+    container_name: shard1-3
+    image: mongo:latest
+    command: >
+      mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard1_3_data:/data/db
+
+  # Shard2 replica set (3 members)
+  shard2-1:
+    container_name: shard2-1
+    image: mongo:latest
+    command: >
+      mongod --shardsvr --replSet shard2ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard2_1_data:/data/db
+
+  shard2-2:
+    container_name: shard2-2
+    image: mongo:latest
+    command: >
+      mongod --shardsvr --replSet shard2ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard2_2_data:/data/db
+
+  shard2-3:
+    container_name: shard2-3
+    image: mongo:latest
+    command: >
+      mongod --shardsvr --replSet shard2ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard2_3_data:/data/db
+
+  # mongos router
+  mongos:
+    container_name: mongos-cache
+    image: mongo:latest
+    depends_on:
+      - configsvr1
+      - configsvr2
+      - configsvr3
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+    command: >
+      mongos --configdb configReplSet/configsvr1:27019,configsvr2:27019,configsvr3:27019
+             --bind_ip_all --port 27017
+    ports:
+      - "27017:27017"
+
+  # Redis cache
+  redis:
+    container_name: redis-cache
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # application
+  pymongo_api:
+    container_name: pymongo_api_cache
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos
+      - redis
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis:6379"
+
+volumes:
+  configsvr1_data:
+  configsvr2_data:
+  configsvr3_data:
+  shard1_1_data:
+  shard1_2_data:
+  shard1_3_data:
+  shard2_1_data:
+  shard2_2_data:
+  shard2_3_data:
