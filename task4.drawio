@@ -1,0 +1,89 @@
+<mxfile host="Electron" modified="2024-07-11T22:12:44.146Z" agent="draw.io" etag="task4-cache" version="24.6.4" type="device">
+  <diagram name="Sharding + Replication + Cache" id="task4-cache">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- pymongo-api -->
+        <mxCell id="api1" value="pymongo-api" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="100" y="350" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Redis Cache -->
+        <mxCell id="redis" value="Redis&#xa;(Cache)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="100" y="500" width="80" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- mongos router -->
+        <mxCell id="router1" value="mongos&#xa;(Router)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="300" y="350" width="100" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- config server replica set -->
+        <mxCell id="configBox" value="Config Server Replica Set" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9673a6;dashed=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="260" y="100" width="280" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="config1" value="configSrv1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="280" y="130" width="70" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="config2" value="configSrv2" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="365" y="130" width="70" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="config3" value="configSrv3" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="450" y="130" width="70" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- shard1 replica set -->
+        <mxCell id="shard1Box" value="Shard1 Replica Set (rs-shard1)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#82b366;dashed=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="550" y="100" width="280" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="shard1a" value="shard1-a&#xa;(Primary)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="570" y="130" width="70" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="shard1b" value="shard1-b&#xa;(Secondary)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="655" y="130" width="70" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="shard1c" value="shard1-c&#xa;(Secondary)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="740" y="130" width="70" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- shard2 replica set -->
+        <mxCell id="shard2Box" value="Shard2 Replica Set (rs-shard2)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#82b366;dashed=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="550" y="280" width="280" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="shard2a" value="shard2-a&#xa;(Primary)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="570" y="310" width="70" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="shard2b" value="shard2-b&#xa;(Secondary)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="655" y="310" width="70" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="shard2c" value="shard2-c&#xa;(Secondary)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="740" y="310" width="70" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- arrows -->
+        <mxCell id="arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="api1" target="router1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="arrow_cache" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;dashed=1;" edge="1" parent="1" source="api1" target="redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="router1" target="configBox">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="router1" target="shard1Box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="router1" target="shard2Box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
