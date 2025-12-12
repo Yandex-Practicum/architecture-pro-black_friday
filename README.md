@@ -57,4 +57,7 @@
 - [read_pref_consistency](./task9-read-pref/read_pref_consistency.md)
 
 ## Задание 10. Миграция на Cassandra: модель данных, стратегии репликации и шардирования
-- [task10-cassandra_migration](./task10-cassandra_migration/cassandra_migration_design.md)
+- [cassandra_migration_design](./task10-cassandra_migration/cassandra_migration_design.md)
+
+# Объединенное 7-10 [consolidated_architecture_7_10](./architecture_tasks_7_10_ru.md)
+
