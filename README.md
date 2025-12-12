@@ -4,6 +4,17 @@
 - [Sharding-Replication-Redis](./task1-single/task1_solutions-3-Sharding-Replication-Redis.jpg)
 
 ## Задание 2. Шардирование
+- [ReadMe](./task2-mongo-sharding/README.md)
+- Короткая альтернатива:
+  - в каталоги задания:
+  ```cd task2-mongo-sharding```
+  - запуск:
+  ```docker compose up -d```
+  - Инициализация: 
+  ```./scripts/mongo-sharding-init.sh```
+  - Наполненение:
+    ```./scripts/mongo-init.sh```
+
 ## Задание 3. Репликация
 ## Задание 4. Кеширование
 ## Задание 5. Service Discovery и балансировка с API Gateway
