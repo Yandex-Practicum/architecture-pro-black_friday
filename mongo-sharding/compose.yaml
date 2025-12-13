@@ -1,0 +1,141 @@
+#
+#
+#
+
+x-mongo-node: &mongo-node
+  image: dh-mirror.gitverse.ru/mongo:latest
+  restart: always
+  networks:
+    - app-network
+  command:
+  - '--configsvr'
+  - '--replSet'
+  - 'config_server'
+  - '--bind_ip_all'
+  - '--port'
+  - '27017'
+  healthcheck:
+    test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+    interval: 5s
+    start_period: 10s
+
+services:
+  config-server:
+    <<: *mongo-node
+    container_name: config-server
+    ports:
+    - "27017:27017"
+    volumes:
+    - config-data:/data/db
+    command:
+    - '--configsvr'
+    - '--replSet'
+    - 'config_server'
+    - '--bind_ip_all'
+    - '--port'
+    - '27017'
+
+  mongodb-rs01-01:
+    <<: *mongo-node
+    container_name: mongodb-rs01-01
+    ports:
+    - "27018:27017"
+    volumes:
+    - shard1-data:/data/db
+    command:
+    - '--shardsvr'
+    - '--replSet'
+    - 'rs01'
+    - '--bind_ip_all'
+    - '--port'
+    - '27017'
+
+  mongodb-rs02-01:
+    <<: *mongo-node
+    container_name: mongodb-rs02-01
+    ports:
+    - "27019:27017"
+    volumes:
+    - shard2-data:/data/db
+    command:
+    - '--shardsvr'
+    - '--replSet'
+    - 'rs02'
+    - '--bind_ip_all'
+    - '--port'
+    - '27017'
+
+  mongodb-router-01:
+    <<: *mongo-node
+    container_name: mongodb-router-01
+    ports:
+    - "27020:27017"
+    networks:
+    - app-network
+    command:
+    - 'mongos'
+    - '--configdb'
+    - 'config_server/config-server:27017'
+    - '--bind_ip_all'
+    - '--port'
+    - '27017'
+
+  mongodb-router-02:
+    <<: *mongo-node
+    container_name: mongodb-router-02
+    ports:
+    - "27021:27017"
+    networks:
+    - app-network
+    command:
+    - 'mongos'
+    - '--configdb'
+    - 'config_server/config-server:27017'
+    - '--bind_ip_all'
+    - '--port'
+    - '27017'
+
+  mongodb-bootstrap:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    volumes:
+      - ./scripts/mongodb-bootstrap.sh:/scripts/bootstrap.sh
+    networks:
+    - app-network
+    depends_on:
+    - config-server
+    - mongodb-rs01-01
+    - mongodb-rs02-01
+    - mongodb-router-01
+    - mongodb-router-02
+    command:
+    - bash
+    - /scripts/bootstrap.sh
+
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - config-server
+      - mongodb-rs01-01
+      - mongodb-rs02-01
+      - mongodb-router-01
+      - mongodb-router-02
+    ports:
+      - 8080:8080
+    environment:
+      #MONGODB_URL: "mongodb://mongodb-router-01,mongodb-router-02"
+      MONGODB_URL: "mongodb://mongodb-router-01"
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+    - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  config-data:
+  shard1-data:
+  shard2-data:

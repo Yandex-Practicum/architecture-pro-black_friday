@@ -1,0 +1,166 @@
+#
+#
+#
+
+x-mongo-node: &mongo-node
+  image: dh-mirror.gitverse.ru/mongo:latest
+  restart: always
+  networks:
+    - app-network
+  command:
+  - '--configsvr'
+  - '--replSet'
+  - 'config_server'
+  - '--bind_ip_all'
+  - '--port'
+  - '27017'
+  healthcheck:
+    test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+    interval: 5s
+    start_period: 10s
+
+x-mongo-rs01-node: &mongo-rs01-node
+  <<: *mongo-node
+  command:
+  - '--shardsvr'
+  - '--replSet'
+  - 'rs01'
+  - '--bind_ip_all'
+  - '--port'
+  - '27017'
+
+x-mongo-rs02-node: &mongo-rs02-node
+  <<: *mongo-node
+  command:
+  - '--shardsvr'
+  - '--replSet'
+  - 'rs02'
+  - '--bind_ip_all'
+  - '--port'
+  - '27017'
+
+x-mongo-router-node: &mongo-router-node
+  <<: *mongo-node
+  networks:
+  - app-network
+  command:
+  - 'mongos'
+  - '--configdb'
+  - 'config_server/config-server:27017'
+  - '--bind_ip_all'
+  - '--port'
+  - '27017'
+
+services:
+  config-server:
+    <<: *mongo-node
+    container_name: config-server
+    volumes:
+    - config-data:/data/db
+    command:
+    - '--configsvr'
+    - '--replSet'
+    - 'config_server'
+    - '--bind_ip_all'
+    - '--port'
+    - '27017'
+
+  storage-rs01-01:
+    <<: *mongo-rs01-node
+    container_name: storage-rs01-01
+    volumes:
+    - rs01-01-data:/data/db
+
+  storage-rs01-02:
+    <<: *mongo-rs01-node
+    container_name: storage-rs01-02
+    volumes:
+    - rs01-02-data:/data/db
+
+  storage-rs01-03:
+    <<: *mongo-rs01-node
+    container_name: storage-rs01-03
+    volumes:
+    - rs01-03-data:/data/db
+
+  storage-rs02-01:
+    <<: *mongo-rs02-node
+    container_name: storage-rs02-01
+    volumes:
+    - rs02-01-data:/data/db
+
+  storage-rs02-02:
+    <<: *mongo-rs02-node
+    container_name: storage-rs02-02
+    volumes:
+    - rs02-02-data:/data/db
+
+  storage-rs02-03:
+    <<: *mongo-rs02-node
+    container_name: storage-rs02-03
+    volumes:
+    - rs02-03-data:/data/db
+
+  router-01:
+    <<: *mongo-router-node
+    container_name: router-01
+
+  router-02:
+    <<: *mongo-router-node
+    container_name: router-02
+
+  cluster-bootstrap:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    volumes:
+      - ./scripts/mongodb-bootstrap.sh:/scripts/bootstrap.sh
+    networks:
+    - app-network
+    depends_on:
+    - config-server
+    - storage-rs01-01
+    - storage-rs01-02
+    - storage-rs01-03
+    - storage-rs02-01
+    - storage-rs02-02
+    - storage-rs02-03
+    - router-01
+    - router-02
+    command:
+    - bash
+    - /scripts/bootstrap.sh
+
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+    - config-server
+    - storage-rs01-01
+    - storage-rs01-02
+    - storage-rs01-03
+    - storage-rs02-01
+    - storage-rs02-02
+    - storage-rs02-03
+    - router-01
+    - router-02
+    ports:
+    - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://router-01,router-02"
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+    - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  config-data:
+  rs01-01-data:
+  rs01-02-data:
+  rs01-03-data:
+  rs02-01-data:
+  rs02-02-data:
+  rs02-03-data:
