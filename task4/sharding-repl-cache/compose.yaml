@@ -1,0 +1,123 @@
+name: sharding-repl-cache
+
+services:
+  # CONFIG SERVER
+  configSrv:
+    image: mongo:latest
+    container_name: configSrv
+    command: mongod --configsvr --replSet configRS --port 27019 --bind_ip_all
+    volumes:
+      - config_data:/data/db
+    networks: [mongo-net]
+
+  # SHARD 1 (Replica Set)
+  shard1_primary:
+    image: mongo:latest
+    container_name: shard1_primary
+    command: mongod --shardsvr --replSet shard1RS --port 27018 --bind_ip_all
+    ports: ["27018:27018"]
+    volumes: [shard1_p:/data/db]
+    networks: [mongo-net]
+
+  shard1_secondary1:
+    image: mongo:latest
+    container_name: shard1_secondary1
+    command: mongod --shardsvr --replSet shard1RS --port 27028 --bind_ip_all
+    ports: ["27028:27028"]
+    volumes: [shard1_s1:/data/db]
+    networks: [mongo-net]
+
+  shard1_secondary2:
+    image: mongo:latest
+    container_name: shard1_secondary2
+    command: mongod --shardsvr --replSet shard1RS --port 27038 --bind_ip_all
+    ports: ["27038:27038"]
+    volumes: [shard1_s2:/data/db]
+    networks: [mongo-net]
+
+  # SHARD 2 (Replica Set)
+  shard2_primary:
+    image: mongo:latest
+    container_name: shard2_primary
+    command: mongod --shardsvr --replSet shard2RS --port 27118 --bind_ip_all
+    ports: ["27118:27118"]
+    volumes: [shard2_p:/data/db]
+    networks: [mongo-net]
+
+  shard2_secondary1:
+    image: mongo:latest
+    container_name: shard2_secondary1
+    command: mongod --shardsvr --replSet shard2RS --port 27128 --bind_ip_all
+    ports: ["27128:27128"]
+    volumes: [shard2_s1:/data/db]
+    networks: [mongo-net]
+
+  shard2_secondary2:
+    image: mongo:latest
+    container_name: shard2_secondary2
+    command: mongod --shardsvr --replSet shard2RS --port 27138 --bind_ip_all
+    ports: ["27138:27138"]
+    volumes: [shard2_s2:/data/db]
+    networks: [mongo-net]
+
+  # MONGOS
+  mongos:
+    image: mongo:latest
+    container_name: mongos
+    depends_on:
+      - configSrv
+    command: mongos --configdb configRS/configSrv:27019 --port 27017 --bind_ip_all
+    ports: ["27017:27017"]
+    networks: [mongo-net]
+
+  # CACHE
+  cache:
+    image: redis:latest
+    container_name: cache
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - cache_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - mongo-net
+
+  # API
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      cache:
+        condition: service_healthy
+      mongos:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://cache:6379/0"
+    networks:
+      - mongo-net
+
+networks:
+  mongo-net:
+    driver: bridge
+
+volumes:
+  config_data:
+  shard1_p:
+  shard1_s1:
+  shard1_s2:
+  shard2_p:
+  shard2_s1:
+  shard2_s2:
+  cache_data:
