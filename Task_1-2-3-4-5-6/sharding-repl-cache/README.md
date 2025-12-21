@@ -1,15 +1,10 @@
-# Task 1,2,3,4,5,6
-
-[README](./Task_1-2-3-4-5-6/README.md)
+# pymongo-api
 
 ## Как запустить
 
-1. В .env указать абсолютный путь до конфига Redis (REDIS_CONFIG) 
+1. В .env указать абсолютный путь до конфига Redis (REDIS_CONFIG)
 
-[пример конфига ](./Task_1-2-3-4-5-6/sharding-repl-cache/redis/redis.conf)
-
-
-2. Переходим в папку ./Task 1-2-3-4-5-6/sharding-repl-cache
+1. Переходим в папку ./Task 1-2-3-4-5-6/sharding-repl-cache
 ```shell
 cd ./Task 1-2-3-4-5-6/sharding-repl-cache
 ```
@@ -25,18 +20,8 @@ docker compose up -d
 ```shell
 ./scripts/mongo-init.sh
 ```
-
 ## Как проверить
 
-Откройте в браузере http://localhost:8080
+Откройте в браузере http://localhost:8080/helloDoc/users - Второй и последующие вызовы должны выполнятся <100мс.
 
-Откройте в браузере http://localhost:8080/helloDoc/users - второй и последующие вызовы должны выполнятся <100мс.
 p.s. вызов валиться с 500 ошибкой, гугл и gpt подсказывают, что проблема в коде питона в версиях библиотек, но мои попытки что-то исправить тщетны, нужна помощь
-
-# Task 7, 8, 9
-
-[README](./Task_7-8-9/README.md)
-
-# Task 10
-
-[README](./Task_10/README.md)
