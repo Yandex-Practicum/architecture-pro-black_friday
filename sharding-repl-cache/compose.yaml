@@ -1,0 +1,220 @@
+name: sharding-repl-cache
+
+services:
+  # === Config Server Replica Set ===
+  configSrv1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: configSrv1
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - configSrv1-data:/data/db
+    command:
+      - "--configsvr"
+      - "--replSet"
+      - "config_server"
+      - "--bind_ip_all"
+      - "--port"
+      - "27017"
+
+  configSrv2:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: configSrv2
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - configSrv2-data:/data/db
+    command:
+      - "--configsvr"
+      - "--replSet"
+      - "config_server"
+      - "--bind_ip_all"
+      - "--port"
+      - "27017"
+
+  configSrv3:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: configSrv3
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - configSrv3-data:/data/db
+    command:
+      - "--configsvr"
+      - "--replSet"
+      - "config_server"
+      - "--bind_ip_all"
+      - "--port"
+      - "27017"
+
+  # === Shard 1 Replica Set ===
+  shard1-1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard1-1
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - shard1-1-data:/data/db
+    command:
+      - "--shardsvr"
+      - "--replSet"
+      - "shard1"
+      - "--bind_ip_all"
+      - "--port"
+      - "27018"
+
+  shard1-2:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard1-2
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - shard1-2-data:/data/db
+    command:
+      - "--shardsvr"
+      - "--replSet"
+      - "shard1"
+      - "--bind_ip_all"
+      - "--port"
+      - "27018"
+
+  shard1-3:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard1-3
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - shard1-3-data:/data/db
+    command:
+      - "--shardsvr"
+      - "--replSet"
+      - "shard1"
+      - "--bind_ip_all"
+      - "--port"
+      - "27018"
+
+  # === Shard 2 Replica Set ===
+  shard2-1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard2-1
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - shard2-1-data:/data/db
+    command:
+      - "--shardsvr"
+      - "--replSet"
+      - "shard2"
+      - "--bind_ip_all"
+      - "--port"
+      - "27018"
+
+  shard2-2:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard2-2
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - shard2-2-data:/data/db
+    command:
+      - "--shardsvr"
+      - "--replSet"
+      - "shard2"
+      - "--bind_ip_all"
+      - "--port"
+      - "27018"
+
+  shard2-3:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard2-3
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - shard2-3-data:/data/db
+    command:
+      - "--shardsvr"
+      - "--replSet"
+      - "shard2"
+      - "--bind_ip_all"
+      - "--port"
+      - "27018"
+
+  # === Mongos Router ===
+  mongos_router:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: mongos_router
+    restart: always
+    ports:
+      - "27020:27020"
+    networks:
+      - app-network
+    command:
+      - "mongos"
+      - "--configdb"
+      - "config_server/configSrv1:27017,configSrv2:27017,configSrv3:27017"
+      - "--bind_ip_all"
+      - "--port"
+      - "27020"
+    depends_on:
+      - configSrv1
+      - configSrv2
+      - configSrv3
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+
+  # === Redis Cache ===
+  redis:
+    image: dh-mirror.gitverse.ru/redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    volumes:
+      - redis-data:/data
+
+  # === Application ===
+  pymongo_api:
+    container_name: pymongo_api
+    image: kazhem/pymongo_api:1.0.0
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    environment:
+      MONGODB_URL: "mongodb://mongos_router:27020"
+      MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis:6379"
+    depends_on:
+      - mongos_router
+      - redis
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  configSrv1-data:
+  configSrv2-data:
+  configSrv3-data:
+  shard1-1-data:
+  shard1-2-data:
+  shard1-3-data:
+  shard2-1-data:
+  shard2-2-data:
+  shard2-3-data:
+  redis-data:
