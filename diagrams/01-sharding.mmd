@@ -1,0 +1,43 @@
+graph TB
+    subgraph "Client Layer"
+        Client[Web Browser]
+    end
+
+    subgraph "Application Layer"
+        API[pymongo-api<br/>Flask Application]
+    end
+
+    subgraph "MongoDB Sharded Cluster"
+        mongos[mongos<br/>Query Router]
+        
+        subgraph "Config Servers"
+            configSrv1[configSrv1<br/>Config Server]
+            configSrv2[configSrv2<br/>Config Server]
+            configSrv3[configSrv3<br/>Config Server]
+        end
+        
+        subgraph "Shard 1"
+            shard1[shard1<br/>Primary Shard 1]
+        end
+        
+        subgraph "Shard 2"
+            shard2[shard2<br/>Primary Shard 2]
+        end
+    end
+
+    Client -->|HTTP| API
+    API -->|MongoDB Protocol| mongos
+    mongos -->|Metadata| configSrv1
+    mongos -->|Metadata| configSrv2
+    mongos -->|Metadata| configSrv3
+    mongos -->|Data Queries| shard1
+    mongos -->|Data Queries| shard2
+
+    style API fill:#4CAF50
+    style mongos fill:#FF9800
+    style configSrv1 fill:#2196F3
+    style configSrv2 fill:#2196F3
+    style configSrv3 fill:#2196F3
+    style shard1 fill:#9C27B0
+    style shard2 fill:#9C27B0
+

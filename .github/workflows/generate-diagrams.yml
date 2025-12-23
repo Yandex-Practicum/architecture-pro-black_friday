@@ -1,0 +1,91 @@
+name: Generate Diagrams
+
+on:
+  push:
+    branches:
+      - main
+      - solution
+    paths:
+      - 'diagrams/**/*.mmd'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install system dependencies for Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libnspr4 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libatspi2.0-0 \
+            fonts-liberation \
+            libu2f-udev
+      
+      - name: Install Mermaid CLI
+        run: npm install -g @mermaid-js/mermaid-cli
+      
+      - name: Create output directory
+        run: mkdir -p diagrams/output
+      
+      - name: Generate PNG diagrams
+        run: |
+          for file in diagrams/*.mmd; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file" .mmd)
+              echo "Generating PNG for $filename..."
+              mmdc -i "$file" -o "diagrams/output/${filename}.png" -b white \
+                -p puppeteer-config.json
+            fi
+          done
+      
+      - name: Generate SVG diagrams
+        run: |
+          for file in diagrams/*.mmd; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file" .mmd)
+              echo "Generating SVG for $filename..."
+              mmdc -i "$file" -o "diagrams/output/${filename}.svg" -b white \
+                -p puppeteer-config.json
+            fi
+          done
+      
+      - name: Commit and push generated diagrams
+        if: github.event_name == 'push'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add diagrams/output/*.png diagrams/output/*.svg
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: update generated diagrams [skip ci]" && git push)
+      
+      - name: Upload diagrams as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagrams
+          path: diagrams/output/
+          retention-days: 90
+

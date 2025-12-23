@@ -1,0 +1,916 @@
+# Задание 7: Проектирование схем коллекций для шардирования
+
+> 📐 Архитектурный документ по проектированию схем коллекций и выбору стратегий шардирования  
+> 🏠 [← Вернуться к README](../README.md)
+
+---
+
+## 📚 Содержание
+
+1. [Обзор предметной области](#обзор-предметной-области)
+2. [Коллекция products](#коллекция-products)
+3. [Коллекция orders](#коллекция-orders)
+4. [Коллекция carts](#коллекция-carts)
+5. [Сравнительная таблица](#сравнительная-таблица)
+6. [Примеры команд MongoDB](#примеры-команд-mongodb)
+7. [Рекомендации по оптимизации](#рекомендации-по-оптимизации)
+
+---
+
+## Обзор предметной области
+
+### Контекст
+
+Интернет-магазин "Мобильный мир" значительно расширился:
+- **Было**: только аксессуары для смартфонов
+- **Стало**: электроника, аудио, бытовая техника, книги и другие категории
+
+### Требования к системе
+
+- **Масштабирование**: Рост количества товаров, заказов и пользователей
+- **Производительность**: Быстрые операции создания заказов, обновления остатков
+- **Доступность**: Работа в нескольких геозонах (Москва, Екатеринбург, Калининград и др.)
+- **Распределение нагрузки**: Равномерное распределение данных по шардам
+
+### Три основные коллекции
+
+1. **products** - каталог товаров с остатками по геозонам
+2. **orders** - заказы пользователей
+3. **carts** - текущие корзины (пользовательские и гостевые)
+
+---
+
+## Коллекция products
+
+### Описание
+
+Хранит информацию о товарах магазина с остатками в разных геозонах.
+
+### Схема коллекции
+
+```javascript
+{
+  _id: ObjectId("..."),              // Уникальный идентификатор товара
+  product_id: "PROD-12345",          // Человекочитаемый ID
+  name: "Смартфон X",                // Наименование
+  category: "electronics",           // Категория товара
+  price: 49999.00,                   // Цена в рублях
+  stock_by_geo: {                    // Остатки по геозонам
+    "moscow": 100,
+    "ekaterinburg": 50,
+    "kaliningrad": 30,
+    "novosibirsk": 75
+  },
+  attributes: {                      // Дополнительные атрибуты
+    color: "black",
+    size: "128GB",
+    brand: "Samsung"
+  },
+  created_at: ISODate("2025-01-15T10:00:00Z"),
+  updated_at: ISODate("2025-10-27T15:30:00Z")
+}
+```
+
+### Основные операции
+
+| Операция | Частота | Описание |
+|----------|---------|----------|
+| **Обновление остатков** | Очень высокая | При каждой покупке: `$inc: { "stock_by_geo.moscow": -1 }` |
+| **Поиск по категориям** | Высокая | Каталог: `{ category: "electronics" }` |
+| **Фильтрация по цене** | Средняя | `{ price: { $gte: 10000, $lte: 50000 } }` |
+| **Получение товара** | Высокая | Страница товара: `{ product_id: "PROD-12345" }` |
+
+### Анализ кандидатов для шард-ключа
+
+#### Вариант 1: `{ category: 1, product_id: 1 }` ⭐ **Рекомендуется**
+
+**Преимущества:**
+- ✅ **Эффективные запросы по категориям**: Все товары категории на одном шарде
+- ✅ **Хорошая кардинальность**: category (~10-50 значений) + product_id (уникальный)
+- ✅ **Локальность данных**: Связанные товары рядом
+- ✅ **Эффективные range-запросы** по цене внутри категории
+
+**Недостатки:**
+- ⚠️ Категории с большим количеством товаров могут создать "горячие" шарды
+- ⚠️ Нужен мониторинг размера чанков популярных категорий
+
+**Пример распределения:**
+```
+Shard 1: electronics (5000 товаров)
+Shard 2: books (3000 товаров), audio (2000 товаров)
+Shard 3: appliances (4000 товаров)
+```
+
+#### Вариант 2: `{ product_id: "hashed" }`
+
+**Преимущества:**
+- ✅ **Равномерное распределение**: Хеш гарантирует случайное распределение
+- ✅ **Нет "горячих" шардов**: Все шарды получают примерно равную нагрузку
+
+**Недостатки:**
+- ❌ **Неэффективные запросы по категориям**: Нужно обращаться ко всем шардам
+- ❌ **Scatter-gather для каталога**: Каждый запрос категории идет на все шарды
+- ❌ **Невозможны range-запросы**: Хеш ломает порядок
+
+#### Вариант 3: `{ _id: 1 }`
+
+**Недостатки:**
+- ❌ **Monotonic key**: ObjectId растёт монотонно → все записи на последний шард
+- ❌ **Несбалансированная запись**: Один шард перегружен
+
+### Выбранная стратегия: **Range Sharding по `{ category: 1, product_id: 1 }`**
+
+**Обоснование:**
+1. **Поиск по категориям** - основная операция в каталоге
+   - `db.products.find({ category: "electronics" })` → один шард
+   
+2. **Хорошая кардинальность**: Составной ключ обеспечивает уникальность
+   
+3. **Локальность данных**: Товары одной категории на одном шарде
+   - Эффективная фильтрация: `{ category: "electronics", price: { $gte: 10000 } }`
+   
+4. **Масштабируемость**: Можно split/move чанки при росте категорий
+
+**Команда создания шардированной коллекции:**
+```javascript
+// Включить шардирование для БД
+sh.enableSharding("mobile_world")
+
+// Создать индекс для шард-ключа
+db.products.createIndex({ category: 1, product_id: 1 })
+
+// Шардировать коллекцию
+sh.shardCollection("mobile_world.products", { category: 1, product_id: 1 })
+```
+
+### Дополнительные индексы
+
+```javascript
+// Индекс для поиска по категории и цене
+db.products.createIndex({ category: 1, price: 1 })
+
+// Индекс для полнотекстового поиска
+db.products.createIndex({ name: "text", "attributes.brand": "text" })
+
+// Индекс для поиска по product_id (уже есть в составе шард-ключа)
+// db.products.createIndex({ product_id: 1 }) // не нужен отдельно
+```
+
+---
+
+## Коллекция orders
+
+### Описание
+
+Хранит заказы клиентов с историей покупок.
+
+### Схема коллекции
+
+```javascript
+{
+  _id: ObjectId("..."),              // Уникальный идентификатор заказа
+  order_id: "ORD-2025-10-001234",    // Человекочитаемый ID
+  user_id: "USER-67890",             // Идентификатор клиента
+  created_at: ISODate("2025-10-27T14:30:00Z"),  // Дата заказа
+  items: [                           // Товары в заказе
+    {
+      product_id: "PROD-12345",
+      name: "Смартфон X",
+      quantity: 1,
+      price: 49999.00
+    },
+    {
+      product_id: "PROD-67890",
+      name: "Книга 'MongoDB in Action'",
+      quantity: 2,
+      price: 1500.00
+    }
+  ],
+  status: "processing",              // pending | processing | shipped | delivered | cancelled
+  total_amount: 52999.00,            // Общая сумма
+  geo_zone: "moscow",                // Геозона доставки
+  shipping_address: {
+    city: "Москва",
+    street: "Ленинский проспект, 15",
+    zip: "119991"
+  },
+  updated_at: ISODate("2025-10-27T15:00:00Z")
+}
+```
+
+### Основные операции
+
+| Операция | Частота | Описание |
+|----------|---------|----------|
+| **Создание заказа** | Высокая | INSERT с `user_id`, `geo_zone`, текущей датой |
+| **История заказов пользователя** | Высокая | `{ user_id: "USER-67890" }` |
+| **Обновление статуса** | Средняя | `{ order_id: "..." }`, UPDATE status |
+| **Поиск по геозоне** | Средняя | Отчеты: `{ geo_zone: "moscow", created_at: { $gte: ... } }` |
+| **Отмена заказа** | Низкая | `{ order_id: "..." }`, UPDATE status="cancelled" |
+
+### Анализ кандидатов для шард-ключа
+
+#### Вариант 1: `{ user_id: 1, created_at: 1 }` ⭐ **Рекомендуется**
+
+**Преимущества:**
+- ✅ **Эффективная история пользователя**: `{ user_id: "..." }` → один шард
+- ✅ **Хронологический порядок**: created_at позволяет range-запросы
+- ✅ **Локальность данных пользователя**: Все заказы юзера рядом
+- ✅ **Хорошая кардинальность**: user_id уникальный + timestamp
+
+**Недостатки:**
+- ⚠️ "Холодные" и "горячие" пользователи (VIP с множеством заказов)
+- ⚠️ Нужна балансировка активных пользователей
+
+**Пример распределения:**
+```
+Shard 1: USER-00001...USER-10000 (10,000 пользователей)
+Shard 2: USER-10001...USER-20000 (10,000 пользователей)
+```
+
+#### Вариант 2: `{ geo_zone: 1, user_id: 1 }`
+
+**Преимущества:**
+- ✅ **Географическая локальность**: Заказы одной геозоны на одном шарде
+- ✅ **Эффективные отчеты по регионам**: `{ geo_zone: "moscow" }` → один шард
+- ✅ **Изоляция нагрузки по регионам**: Москва не влияет на Екатеринбург
+
+**Недостатки:**
+- ❌ **История пользователя**: Нужно обращаться к нескольким шардам, если юзер заказывал в разных геозонах
+- ⚠️ Неравномерная нагрузка: Москва >> Калининград
+
+#### Вариант 3: `{ user_id: "hashed" }`
+
+**Преимущества:**
+- ✅ **Равномерное распределение**: Хеш обеспечивает баланс
+
+**Недостатки:**
+- ❌ **Нет range-запросов**: Нельзя получить заказы за период
+- ❌ **История пользователя**: Все равно на одном шарде (по хешу user_id)
+
+### Выбранная стратегия: **Range Sharding по `{ user_id: 1, created_at: 1 }`**
+
+**Обоснование:**
+1. **История заказов пользователя** - основной запрос
+   - `db.orders.find({ user_id: "USER-67890" }).sort({ created_at: -1 })` → один шард
+   
+2. **Хронологический порядок**: Range-запросы за период
+   - `{ user_id: "...", created_at: { $gte: startDate } }`
+   
+3. **Локальность**: Все данные пользователя на одном шарде
+   - Быстрые аналитические запросы по юзеру
+   
+4. **Избегаем scatter-gather**: Не нужно обращаться ко всем шардам
+
+**Альтернатива для аналитики по геозонам:**
+Создать отдельную коллекцию `orders_by_geo` с шард-ключом `{ geo_zone: 1, created_at: 1 }` для отчетов.
+
+**Команда создания:**
+```javascript
+sh.enableSharding("mobile_world")
+
+db.orders.createIndex({ user_id: 1, created_at: 1 })
+
+sh.shardCollection("mobile_world.orders", { user_id: 1, created_at: 1 })
+```
+
+### Дополнительные индексы
+
+```javascript
+// Индекс для поиска по order_id
+db.orders.createIndex({ order_id: 1 })
+
+// Индекс для поиска по статусу (для обработки)
+db.orders.createIndex({ status: 1, created_at: 1 })
+
+// Индекс для отчетов по геозоне
+db.orders.createIndex({ geo_zone: 1, created_at: 1 })
+```
+
+---
+
+## Коллекция carts
+
+### Описание
+
+Хранит текущие корзины пользователей и гостей с автоматической очисткой старых.
+
+### Схема коллекции
+
+```javascript
+{
+  _id: ObjectId("..."),              // Уникальный идентификатор корзины
+  user_id: "USER-67890",             // ID пользователя (null для гостей)
+  session_id: "sess_abc123xyz",     // ID сессии (для гостей)
+  items: [                           // Товары в корзине
+    {
+      product_id: "PROD-12345",
+      quantity: 1,
+      added_at: ISODate("2025-10-27T14:00:00Z")
+    },
+    {
+      product_id: "PROD-67890",
+      quantity: 2,
+      added_at: ISODate("2025-10-27T14:15:00Z")
+    }
+  ],
+  status: "active",                  // active | ordered | abandoned
+  created_at: ISODate("2025-10-27T14:00:00Z"),
+  updated_at: ISODate("2025-10-27T14:30:00Z"),
+  expires_at: ISODate("2025-11-03T14:00:00Z")  // TTL: 7 дней
+}
+```
+
+### Основные операции
+
+| Операция | Частота | Описание |
+|----------|---------|----------|
+| **Создание корзины** | Высокая | INSERT при первом добавлении товара |
+| **Получение корзины** | Очень высокая | `{ user_id: "...", status: "active" }` или `{ session_id: "...", status: "active" }` |
+| **Добавление товара** | Очень высокая | `$push` или `$set` в items |
+| **Удаление товара** | Высокая | `$pull` из items |
+| **Слияние корзин** | Средняя | При логине: гостевая → пользовательская |
+| **Оформление заказа** | Высокая | UPDATE status="ordered" |
+| **Автоочистка** | Фоновая | TTL index на expires_at |
+
+### Анализ кандидатов для шард-ключа
+
+#### Вариант 1: `{ user_id: "hashed" }` ⭐ **Рекомендуется**
+
+**Преимущества:**
+- ✅ **Равномерное распределение**: Хеш обеспечивает баланс нагрузки
+- ✅ **Изоляция пользователей**: Каждый юзер на "своем" шарде (по хешу)
+- ✅ **Быстрый поиск**: `{ user_id: "...", status: "active" }` → один шард по хешу
+
+**Недостатки:**
+- ⚠️ **Гостевые корзины**: user_id = null → все на одном шарде
+  - **Решение**: Использовать составной ключ с session_id
+
+**Команда:**
+```javascript
+sh.shardCollection("mobile_world.carts", { user_id: "hashed" })
+```
+
+#### Вариант 2: `{ session_id: "hashed" }` (для гостей)
+
+**Проблема:**
+- ❌ Гостевые корзины используют session_id
+- ❌ Пользовательские корзины используют user_id
+- ❌ Нужны два разных ключа → невозможно в одной коллекции
+
+**Решение - составной ключ:**
+
+#### Вариант 3: `{ user_session_key: "hashed" }` ⭐ **Оптимальное решение**
+
+**Подход**: Создать вычисляемое поле `user_session_key`:
+```javascript
+user_session_key = user_id || session_id  // user_id если есть, иначе session_id
+```
+
+**Преимущества:**
+- ✅ **Единый ключ** для пользователей и гостей
+- ✅ **Равномерное распределение** через хеширование
+- ✅ **Быстрый поиск**: Один шард по хешу
+
+**Схема с user_session_key:**
+```javascript
+{
+  _id: ObjectId("..."),
+  user_id: "USER-67890",             // или null
+  session_id: "sess_abc123xyz",      // или null
+  user_session_key: "USER-67890",    // user_id || session_id ⭐
+  items: [...],
+  status: "active",
+  ...
+}
+```
+
+### Выбранная стратегия: **Hashed Sharding по `{ user_session_key: "hashed" }`**
+
+**Обоснование:**
+1. **Высокая частота операций**: Каждое действие с корзиной → запрос к БД
+   - Нужна максимальная скорость поиска
+   
+2. **Равномерное распределение нагрузки**: Хеш обеспечивает баланс
+   - Нет "горячих" шардов
+   
+3. **Единый ключ для пользователей и гостей**: user_session_key
+   - Упрощает логику приложения
+   
+4. **Изоляция данных**: Каждая корзина на "своем" шарде
+   - Минимум коллизий
+
+**Команда создания:**
+```javascript
+sh.enableSharding("mobile_world")
+
+// Создать хешированный индекс
+db.carts.createIndex({ user_session_key: "hashed" })
+
+// Шардировать коллекцию
+sh.shardCollection("mobile_world.carts", { user_session_key: "hashed" })
+
+// TTL индекс для автоочистки
+db.carts.createIndex({ expires_at: 1 }, { expireAfterSeconds: 0 })
+```
+
+### Дополнительные индексы
+
+```javascript
+// Индекс для поиска активной корзины пользователя
+db.carts.createIndex({ user_id: 1, status: 1 })
+
+// Индекс для поиска активной корзины гостя
+db.carts.createIndex({ session_id: 1, status: 1 })
+
+// TTL индекс (уже создан выше)
+// db.carts.createIndex({ expires_at: 1 }, { expireAfterSeconds: 0 })
+```
+
+### Логика слияния корзин
+
+```javascript
+// 1. Найти гостевую корзину
+const guestCart = await db.carts.findOne({
+  session_id: "sess_abc123xyz",
+  status: "active"
+})
+
+// 2. Найти или создать пользовательскую корзину
+let userCart = await db.carts.findOne({
+  user_id: "USER-67890",
+  status: "active"
+})
+
+if (!userCart) {
+  userCart = {
+    user_id: "USER-67890",
+    user_session_key: "USER-67890",
+    items: [],
+    status: "active",
+    created_at: new Date(),
+    updated_at: new Date(),
+    expires_at: new Date(Date.now() + 7*24*60*60*1000)
+  }
+  await db.carts.insertOne(userCart)
+}
+
+// 3. Слить items
+for (const item of guestCart.items) {
+  const existingItem = userCart.items.find(i => i.product_id === item.product_id)
+  if (existingItem) {
+    existingItem.quantity += item.quantity  // Суммируем количество
+  } else {
+    userCart.items.push(item)
+  }
+}
+
+// 4. Обновить пользовательскую корзину
+await db.carts.updateOne(
+  { _id: userCart._id },
+  { 
+    $set: { 
+      items: userCart.items,
+      updated_at: new Date()
+    }
+  }
+)
+
+// 5. Пометить гостевую как abandoned
+await db.carts.updateOne(
+  { _id: guestCart._id },
+  { $set: { status: "abandoned", updated_at: new Date() } }
+)
+```
+
+---
+
+## Сравнительная таблица
+
+| Коллекция | Стратегия | Шард-ключ | Обоснование |
+|-----------|-----------|-----------|-------------|
+| **products** | **Range Sharding** | `{ category: 1, product_id: 1 }` | Эффективный поиск по категориям, локальность товаров одной категории |
+| **orders** | **Range Sharding** | `{ user_id: 1, created_at: 1 }` | Быстрая история заказов пользователя, хронологический порядок |
+| **carts** | **Hashed Sharding** | `{ user_session_key: "hashed" }` | Равномерное распределение, высокая частота операций, единый ключ для юзеров и гостей |
+
+### Критерии выбора стратегии
+
+| Критерий | Range Sharding | Hashed Sharding |
+|----------|----------------|-----------------|
+| **Кардинальность** | Нужна высокая | Не критично |
+| **Range-запросы** | ✅ Эффективны | ❌ Невозможны |
+| **Равномерность** | ⚠️ Зависит от данных | ✅ Гарантирована |
+| **Scatter-gather** | Можно избежать | Частый |
+| **Локальность данных** | ✅ Да | ❌ Нет |
+
+---
+
+## Примеры команд MongoDB
+
+### Настройка шардированного кластера
+
+```javascript
+// 1. Подключиться к mongos
+mongosh --host mongos --port 27017
+
+// 2. Включить шардирование для БД
+sh.enableSharding("mobile_world")
+
+// 3. Проверить статус
+sh.status()
+```
+
+### Шардирование коллекции products
+
+```javascript
+// Создать индекс для шард-ключа
+db.products.createIndex({ category: 1, product_id: 1 })
+
+// Шардировать коллекцию
+sh.shardCollection("mobile_world.products", { category: 1, product_id: 1 })
+
+// Проверить распределение
+db.products.getShardDistribution()
+
+// Пример вставки товара
+db.products.insertOne({
+  product_id: "PROD-12345",
+  name: "Смартфон X",
+  category: "electronics",
+  price: 49999.00,
+  stock_by_geo: {
+    "moscow": 100,
+    "ekaterinburg": 50
+  },
+  attributes: {
+    color: "black",
+    size: "128GB"
+  },
+  created_at: new Date(),
+  updated_at: new Date()
+})
+
+// Запрос товаров категории (targeted query - один шард)
+db.products.find({ 
+  category: "electronics",
+  price: { $gte: 10000, $lte: 50000 }
+}).sort({ price: 1 })
+
+// Обновление остатка (будет на одном шарде)
+db.products.updateOne(
+  { category: "electronics", product_id: "PROD-12345" },
+  { $inc: { "stock_by_geo.moscow": -1 }, $set: { updated_at: new Date() } }
+)
+```
+
+### Шардирование коллекции orders
+
+```javascript
+// Создать индекс
+db.orders.createIndex({ user_id: 1, created_at: 1 })
+
+// Шардировать
+sh.shardCollection("mobile_world.orders", { user_id: 1, created_at: 1 })
+
+// Создать дополнительные индексы
+db.orders.createIndex({ order_id: 1 })
+db.orders.createIndex({ status: 1, created_at: 1 })
+db.orders.createIndex({ geo_zone: 1, created_at: 1 })
+
+// Пример создания заказа
+db.orders.insertOne({
+  order_id: "ORD-2025-10-001234",
+  user_id: "USER-67890",
+  created_at: new Date(),
+  items: [
+    {
+      product_id: "PROD-12345",
+      name: "Смартфон X",
+      quantity: 1,
+      price: 49999.00
+    }
+  ],
+  status: "pending",
+  total_amount: 49999.00,
+  geo_zone: "moscow",
+  shipping_address: {
+    city: "Москва",
+    street: "Ленинский проспект, 15",
+    zip: "119991"
+  },
+  updated_at: new Date()
+})
+
+// История заказов пользователя (targeted query - один шард)
+db.orders.find({ 
+  user_id: "USER-67890" 
+}).sort({ created_at: -1 }).limit(10)
+
+// Заказы пользователя за период (targeted query - один шард)
+db.orders.find({
+  user_id: "USER-67890",
+  created_at: { 
+    $gte: ISODate("2025-10-01T00:00:00Z"),
+    $lte: ISODate("2025-10-31T23:59:59Z")
+  }
+})
+
+// Обновление статуса
+db.orders.updateOne(
+  { order_id: "ORD-2025-10-001234" },
+  { $set: { status: "processing", updated_at: new Date() } }
+)
+```
+
+### Шардирование коллекции carts
+
+```javascript
+// Создать хешированный индекс
+db.carts.createIndex({ user_session_key: "hashed" })
+
+// Шардировать
+sh.shardCollection("mobile_world.carts", { user_session_key: "hashed" })
+
+// TTL индекс для автоочистки
+db.carts.createIndex({ expires_at: 1 }, { expireAfterSeconds: 0 })
+
+// Дополнительные индексы
+db.carts.createIndex({ user_id: 1, status: 1 })
+db.carts.createIndex({ session_id: 1, status: 1 })
+
+// Создание корзины для пользователя
+db.carts.insertOne({
+  user_id: "USER-67890",
+  session_id: null,
+  user_session_key: "USER-67890",  // user_id || session_id
+  items: [
+    {
+      product_id: "PROD-12345",
+      quantity: 1,
+      added_at: new Date()
+    }
+  ],
+  status: "active",
+  created_at: new Date(),
+  updated_at: new Date(),
+  expires_at: new Date(Date.now() + 7*24*60*60*1000)  // 7 дней
+})
+
+// Создание корзины для гостя
+db.carts.insertOne({
+  user_id: null,
+  session_id: "sess_abc123xyz",
+  user_session_key: "sess_abc123xyz",
+  items: [],
+  status: "active",
+  created_at: new Date(),
+  updated_at: new Date(),
+  expires_at: new Date(Date.now() + 7*24*60*60*1000)
+})
+
+// Получение активной корзины пользователя (hashed query - один шард)
+db.carts.findOne({ 
+  user_session_key: "USER-67890",  // будет хеширован
+  status: "active" 
+})
+
+// Добавление товара в корзину
+db.carts.updateOne(
+  { user_session_key: "USER-67890", status: "active" },
+  { 
+    $push: { 
+      items: {
+        product_id: "PROD-67890",
+        quantity: 2,
+        added_at: new Date()
+      }
+    },
+    $set: { updated_at: new Date() }
+  }
+)
+
+// Удаление товара из корзины
+db.carts.updateOne(
+  { user_session_key: "USER-67890", status: "active" },
+  { 
+    $pull: { items: { product_id: "PROD-12345" } },
+    $set: { updated_at: new Date() }
+  }
+)
+
+// Оформление заказа (корзина → заказ)
+db.carts.updateOne(
+  { user_session_key: "USER-67890", status: "active" },
+  { $set: { status: "ordered", updated_at: new Date() } }
+)
+```
+
+### Мониторинг шардирования
+
+```javascript
+// Статус шардированного кластера
+sh.status()
+
+// Распределение данных по шардам
+db.products.getShardDistribution()
+db.orders.getShardDistribution()
+db.carts.getShardDistribution()
+
+// Количество чанков на каждом шарде
+db.printShardingStatus()
+
+// Просмотр чанков коллекции
+db.getSiblingDB("config").chunks.find({ ns: "mobile_world.products" }).count()
+
+// Статистика операций
+db.products.stats()
+db.orders.stats()
+db.carts.stats()
+
+// Explain для проверки targeted vs scatter-gather
+db.products.find({ category: "electronics" }).explain("executionStats")
+```
+
+---
+
+## Рекомендации по оптимизации
+
+### 1. Балансировка чанков
+
+**Проблема**: Популярные категории могут создать большие чанки.
+
+**Решение**:
+```javascript
+// Включить автобалансировку
+sh.setBalancerState(true)
+
+// Настроить размер чанка (по умолчанию 64MB)
+use config
+db.settings.updateOne(
+  { _id: "chunksize" },
+  { $set: { value: 32 } },  // 32MB chunks
+  { upsert: true }
+)
+
+// Ручной split чанка
+sh.splitFind("mobile_world.products", { category: "electronics", product_id: "PROD-50000" })
+
+// Переместить чанк на другой шард
+sh.moveChunk("mobile_world.products", 
+  { category: "electronics", product_id: "PROD-50000" }, 
+  "shard2"
+)
+```
+
+### 2. Зоны шардирования (Zone Sharding)
+
+**Сценарий**: Географическое распределение данных.
+
+```javascript
+// Создать зоны
+sh.addShardTag("shard1", "moscow")
+sh.addShardTag("shard2", "regions")
+
+// Назначить диапазоны категорий на зоны
+sh.addTagRange(
+  "mobile_world.products",
+  { category: "electronics", product_id: MinKey },
+  { category: "electronics", product_id: MaxKey },
+  "moscow"  // Популярные категории в Москве
+)
+
+sh.addTagRange(
+  "mobile_world.products",
+  { category: "books", product_id: MinKey },
+  { category: "books", product_id: MaxKey },
+  "regions"  // Менее популярные в регионах
+)
+```
+
+### 3. Индексы для покрытия запросов
+
+```javascript
+// Покрывающий индекс для каталога
+db.products.createIndex({ 
+  category: 1, 
+  price: 1, 
+  product_id: 1,
+  name: 1  // Включить в индекс для покрытия
+})
+
+// Запрос будет использовать только индекс (covered query)
+db.products.find(
+  { category: "electronics", price: { $lte: 50000 } },
+  { _id: 0, product_id: 1, name: 1, price: 1 }  // Проекция только индексированных полей
+)
+```
+
+### 4. Агрегация с $merge для аналитики
+
+```javascript
+// Создать материализованное представление для отчетов по геозонам
+db.orders.aggregate([
+  {
+    $match: {
+      created_at: { $gte: ISODate("2025-10-01") }
+    }
+  },
+  {
+    $group: {
+      _id: { geo_zone: "$geo_zone", date: { $dateToString: { format: "%Y-%m-%d", date: "$created_at" } } },
+      total_orders: { $sum: 1 },
+      total_revenue: { $sum: "$total_amount" }
+    }
+  },
+  {
+    $merge: {
+      into: "orders_analytics",
+      on: "_id",
+      whenMatched: "replace",
+      whenNotMatched: "insert"
+    }
+  }
+])
+
+// Шардировать аналитическую коллекцию
+sh.shardCollection("mobile_world.orders_analytics", { "_id.geo_zone": 1, "_id.date": 1 })
+```
+
+### 5. Мониторинг производительности
+
+```javascript
+// Включить профилирование (уровень 1 - медленные запросы >100мс)
+db.setProfilingLevel(1, { slowms: 100 })
+
+// Просмотр медленных запросов
+db.system.profile.find({ millis: { $gt: 100 } }).sort({ ts: -1 }).limit(10)
+
+// Статистика операций
+db.serverStatus().opcounters
+db.serverStatus().connections
+
+// Размер коллекций
+db.stats()
+```
+
+### 6. Backup стратегия
+
+```javascript
+// Для шардированного кластера используйте:
+// - mongodump с флагом --oplog для консистентности
+// - MongoDB Atlas Backup (автоматический)
+// - Percona Backup for MongoDB (опенсорс)
+
+mongodump --host mongos:27017 --db mobile_world --oplog --out /backup/
+```
+
+---
+
+## Итоги
+
+### Выбранные стратегии
+
+| Коллекция | Шард-ключ | Стратегия | Обоснование |
+|-----------|-----------|-----------|-------------|
+| **products** | `{ category: 1, product_id: 1 }` | Range | Эффективный каталог, локальность товаров категории |
+| **orders** | `{ user_id: 1, created_at: 1 }` | Range | Быстрая история, хронология, локальность данных юзера |
+| **carts** | `{ user_session_key: "hashed" }` | Hashed | Равномерность, высокая частота, единый ключ |
+
+### Ключевые принципы
+
+1. ✅ **Кардинальность**: Шард-ключ должен иметь высокую кардинальность
+2. ✅ **Частота запросов**: Учитываем самые частые операции
+3. ✅ **Локальность данных**: Связанные данные на одном шарде
+4. ✅ **Избегаем scatter-gather**: Targeted queries на один шард
+5. ✅ **Мониторинг**: Регулярная проверка распределения чанков
+6. ✅ **Балансировка**: Автоматическая или ручная миграция чанков
+
+### Производительность
+
+**Ожидаемые результаты:**
+- **products**: Поиск по категории → 1 шард (быстро)
+- **orders**: История юзера → 1 шард (быстро)
+- **carts**: Получение корзины → 1 шард по хешу (быстро)
+
+**Масштабируемость:**
+- Легко добавить новые шарды
+- Автоматическое перераспределение чанков
+- Горизонтальное масштабирование БД
+
+---
+
+## 📚 Связанные документы
+
+- 🏠 [README.md](../README.md) - главная страница проекта
+- 📖 [TASK1_PLANNING.md](TASK1_PLANNING.md) - планирование архитектуры
+- ⚙️ [TASK2_SUMMARY.md](TASK2_SUMMARY.md) - реализация шардирования
+- 🔧 [TASK2_SHARDING_SETUP.md](TASK2_SHARDING_SETUP.md) - настройка шардов
+
+---
+
+**✅ Задание 7 выполнено!**
+
+**Спроектированы схемы коллекций с оптимальными стратегиями шардирования для интернет-магазина "Мобильный мир".**
+
+**🎉 Система готова к масштабированию и высокой нагрузке!**
+

@@ -1,0 +1,109 @@
+graph TB
+    subgraph "Client Layer"
+        Client[Client/Browser]
+    end
+
+    subgraph "API Gateway & Service Discovery"
+        APIGateway[API Gateway<br/>nginx/Kong<br/>:80]
+        Consul[Consul Server<br/>Service Discovery<br/>:8500]
+    end
+
+    subgraph "Application Layer (3 instances)"
+        API1[pymongo-api-1<br/>:8081]
+        API2[pymongo-api-2<br/>:8082]
+        API3[pymongo-api-3<br/>:8083]
+    end
+
+    subgraph "Cache Layer"
+        Redis[Redis Cache<br/>:6379]
+    end
+
+    subgraph "MongoDB Router"
+        Mongos[mongos<br/>Query Router<br/>:27017]
+    end
+
+    subgraph "Config Servers Replica Set"
+        ConfigSrv1[configSrv1<br/>:27019]
+        ConfigSrv2[configSrv2<br/>:27019]
+        ConfigSrv3[configSrv3<br/>:27019]
+    end
+
+    subgraph "Shard 1 Replica Set"
+        Shard1_1[shard1-1<br/>Primary<br/>:27018]
+        Shard1_2[shard1-2<br/>Secondary<br/>:27018]
+        Shard1_3[shard1-3<br/>Secondary<br/>:27018]
+    end
+
+    subgraph "Shard 2 Replica Set"
+        Shard2_1[shard2-1<br/>Primary<br/>:27018]
+        Shard2_2[shard2-2<br/>Secondary<br/>:27018]
+        Shard2_3[shard2-3<br/>Secondary<br/>:27018]
+    end
+
+    %% Client to API Gateway
+    Client -->|HTTP Request| APIGateway
+
+    %% API Gateway to Application Instances (Load Balancing)
+    APIGateway -->|Round Robin| API1
+    APIGateway -->|Round Robin| API2
+    APIGateway -->|Round Robin| API3
+
+    %% Application Instances register with Consul
+    API1 -.->|Register/Health Check| Consul
+    API2 -.->|Register/Health Check| Consul
+    API3 -.->|Register/Health Check| Consul
+
+    %% API Gateway queries Consul for service discovery
+    APIGateway -.->|Service Discovery| Consul
+
+    %% Application Instances to Redis (Cache)
+    API1 -->|Cache Check| Redis
+    API2 -->|Cache Check| Redis
+    API3 -->|Cache Check| Redis
+
+    %% Application Instances to Mongos
+    API1 -->|Query| Mongos
+    API2 -->|Query| Mongos
+    API3 -->|Query| Mongos
+
+    %% Mongos to Config Servers
+    Mongos -->|Metadata| ConfigSrv1
+    Mongos -->|Metadata| ConfigSrv2
+    Mongos -->|Metadata| ConfigSrv3
+
+    %% Config Servers Replication
+    ConfigSrv1 -.->|Replicate| ConfigSrv2
+    ConfigSrv2 -.->|Replicate| ConfigSrv3
+    ConfigSrv3 -.->|Replicate| ConfigSrv1
+
+    %% Mongos to Shards
+    Mongos -->|Route Data| Shard1_1
+    Mongos -->|Route Data| Shard2_1
+
+    %% Shard 1 Replication
+    Shard1_1 -.->|Replicate| Shard1_2
+    Shard1_1 -.->|Replicate| Shard1_3
+
+    %% Shard 2 Replication
+    Shard2_1 -.->|Replicate| Shard2_2
+    Shard2_1 -.->|Replicate| Shard2_3
+
+    %% Styling
+    classDef clientStyle fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef gatewayStyle fill:#fff3e0,stroke:#e65100,stroke-width:3px
+    classDef consulStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef appStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef cacheStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef routerStyle fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef configStyle fill:#e0f7fa,stroke:#006064,stroke-width:2px
+    classDef shardStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+
+    class Client clientStyle
+    class APIGateway gatewayStyle
+    class Consul consulStyle
+    class API1,API2,API3 appStyle
+    class Redis cacheStyle
+    class Mongos routerStyle
+    class ConfigSrv1,ConfigSrv2,ConfigSrv3 configStyle
+    class Shard1_1,Shard1_2,Shard1_3,Shard2_1,Shard2_2,Shard2_3 shardStyle
+

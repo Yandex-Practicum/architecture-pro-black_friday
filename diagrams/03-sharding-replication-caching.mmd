@@ -1,0 +1,73 @@
+graph TB
+    subgraph "Client Layer"
+        Client[Web Browser]
+    end
+
+    subgraph "Application Layer"
+        API[pymongo-api<br/>Flask Application]
+    end
+
+    subgraph "Caching Layer"
+        Redis[redis<br/>Redis Cache]
+    end
+
+    subgraph "MongoDB Sharded Cluster with Replication"
+        mongos[mongos<br/>Query Router]
+        
+        subgraph "Config Servers Replica Set"
+            configSrv1[configSrv1<br/>Config Primary]
+            configSrv2[configSrv2<br/>Config Secondary]
+            configSrv3[configSrv3<br/>Config Secondary]
+        end
+        
+        subgraph "Shard 1 Replica Set"
+            shard1_1[shard1-1<br/>Primary]
+            shard1_2[shard1-2<br/>Secondary]
+            shard1_3[shard1-3<br/>Secondary]
+        end
+        
+        subgraph "Shard 2 Replica Set"
+            shard2_1[shard2-1<br/>Primary]
+            shard2_2[shard2-2<br/>Secondary]
+            shard2_3[shard2-3<br/>Secondary]
+        end
+    end
+
+    Client -->|HTTP| API
+    API -->|Cache Check| Redis
+    API -->|MongoDB Protocol| mongos
+    
+    mongos -->|Metadata| configSrv1
+    mongos -->|Metadata| configSrv2
+    mongos -->|Metadata| configSrv3
+    
+    configSrv1 -.->|Replication| configSrv2
+    configSrv1 -.->|Replication| configSrv3
+    
+    mongos -->|Read/Write| shard1_1
+    mongos -->|Read| shard1_2
+    mongos -->|Read| shard1_3
+    
+    shard1_1 -.->|Replication| shard1_2
+    shard1_1 -.->|Replication| shard1_3
+    
+    mongos -->|Read/Write| shard2_1
+    mongos -->|Read| shard2_2
+    mongos -->|Read| shard2_3
+    
+    shard2_1 -.->|Replication| shard2_2
+    shard2_1 -.->|Replication| shard2_3
+
+    style API fill:#4CAF50
+    style Redis fill:#DC382D
+    style mongos fill:#FF9800
+    style configSrv1 fill:#2196F3
+    style configSrv2 fill:#2196F3
+    style configSrv3 fill:#2196F3
+    style shard1_1 fill:#9C27B0
+    style shard1_2 fill:#9C27B0
+    style shard1_3 fill:#9C27B0
+    style shard2_1 fill:#E91E63
+    style shard2_2 fill:#E91E63
+    style shard2_3 fill:#E91E63
+

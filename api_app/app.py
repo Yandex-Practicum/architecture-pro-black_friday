@@ -99,11 +99,31 @@ async def root():
     replicaset_name = topology_description.replica_set_name
 
     shards = None
+    shard_distribution = None
     if topology_type == "Sharded":
         shards_list = await client.admin.command("listShards")
         shards = {}
         for shard in shards_list.get("shards", {}):
             shards[shard["_id"]] = shard["host"]
+        
+        # Get document count per shard
+        try:
+            shard_distribution = {}
+            for collection_name in collection_names:
+                collection_stats = await db.command({
+                    "collStats": collection_name,
+                    "verbose": True
+                })
+                if "shards" in collection_stats:
+                    shard_distribution[collection_name] = {}
+                    for shard_name, shard_stats in collection_stats["shards"].items():
+                        shard_distribution[collection_name][shard_name] = {
+                            "count": shard_stats.get("count", 0),
+                            "size": shard_stats.get("size", 0)
+                        }
+        except Exception as e:
+            logger.error(f"Error getting shard distribution: {e}")
+            shard_distribution = {"error": str(e)}
 
     cache_enabled = False
     if REDIS_URL:
@@ -121,6 +141,7 @@ async def root():
         "mongo_is_mongos": client.is_mongos,
         "collections": collections,
         "shards": shards,
+        "shard_distribution": shard_distribution,
         "cache_enabled": cache_enabled,
         "status": "OK",
     }

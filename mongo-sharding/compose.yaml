@@ -1,0 +1,74 @@
+name: mongo-sharding
+
+services:
+  # Config Servers (без replica set для простоты)
+  configSrv1:
+    container_name: configSrv1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - configSrv1_data:/data/db
+
+  configSrv2:
+    container_name: configSrv2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - configSrv2_data:/data/db
+
+  configSrv3:
+    container_name: configSrv3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - configSrv3_data:/data/db
+
+  # Shard 1 (одна нода)
+  shard1:
+    container_name: shard1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --port 27018 --dbpath /data/db
+    volumes:
+      - shard1_data:/data/db
+
+  # Shard 2 (одна нода)
+  shard2:
+    container_name: shard2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --port 27018 --dbpath /data/db
+    volumes:
+      - shard2_data:/data/db
+
+  # Mongos Router
+  mongos:
+    container_name: mongos
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb configReplSet/configSrv1:27019,configSrv2:27019,configSrv3:27019 --bind_ip_all --port 27017
+    depends_on:
+      - configSrv1
+      - configSrv2
+      - configSrv3
+      - shard1
+      - shard2
+    ports:
+      - "27017:27017"
+
+  # Application
+  pymongo-api:
+    container_name: pymongo-api
+    image: kazhem/pymongo_api:1.0.0
+    depends_on:
+      - mongos
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+
+volumes:
+  configSrv1_data:
+  configSrv2_data:
+  configSrv3_data:
+  shard1_data:
+  shard2_data:
+
