@@ -1,0 +1,32 @@
+@startuml Mobile world MongoDB Cassandra
+hide circle
+hide methods
+
+class carts {
+  + cart_id: uuid
+  + user_id: uuid
+  + session_id: text
+  + products: tuple<uuid, int, decimal>
+  + created_at: timestamp
+  + updated_at: timestamp
+}
+
+class sessions {
+  + session_id: text
+  + user_id: uuid
+  + created_at: timestamp
+  + expires_at: timestamp
+}
+
+class products {
+  + product_id: uuid
+  + category: text
+  + name: text
+  + price: decimal
+  + stock_by_geo: map<text, int>
+  + attributes: map<text, text>
+}
+
+carts --> products : "product_id"
+carts --> sessions : "session_id"
+@enduml

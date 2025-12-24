@@ -1,0 +1,14 @@
+@startuml Mobile world Component MongoDB Cluster
+!include C4/C4_Component.puml
+
+ContainerDb(db, "MongoDB Cluster", "MongoDB", "Хранит заказы, товары и корзины") {
+  ComponentDb(orders, "orders", "collection", "Заказы клиентов")
+  ComponentDb(products, "products", "collection", "Каталог товаров")
+  ComponentDb(carts, "carts", "collection", "Корзины пользователей и гостей")
+}
+
+Rel(orders, products, "Содержит ссылки на", "product_id")
+Rel(carts, products, "Содержит ссылки на", "product_id")
+Rel(carts, orders, "Преобразуется в", "order_id")
+
+@enduml

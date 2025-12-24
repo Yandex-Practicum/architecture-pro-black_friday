@@ -1,0 +1,13 @@
+@startuml Mobile world Container Model
+!include C4/C4_Container.puml
+
+ContainerDb(cassandra, "Cassandra Cluster", "Apache Cassandra", "Хранит корзины, сессии, товары")
+
+ContainerDb(mongo, "MongoDB Cluster", "MongoDB", "Хранит заказы и оплаты")
+
+Container(shop, "Интернет-магазин", "Backend", "Работает с Cassandra и MongoDB")
+
+Rel(shop, cassandra, "Чтение/запись", "carts, sessions, products")
+Rel(shop, mongo, "Чтение/запись", "orders, payments")
+
+@enduml

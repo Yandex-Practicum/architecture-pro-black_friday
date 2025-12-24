@@ -1,0 +1,46 @@
+@startuml Mobile world MongoDB Collections
+hide circle
+hide methods
+
+class products {
+  + _id: ObjectId
+  + name: string
+  + category: string
+  + price: decimal
+  + stock_by_geo: array<{ geo_zone: string, qty: int }>
+  + attributes: object
+}
+
+class orders {
+  + _id: ObjectId
+  + user_id: string
+  + created_at: datetime
+  + items: array<{
+       product_id: ObjectId,
+       quantity: int,
+       price: decimal
+    }>
+  + status: string, enum: created | paid | shipped | cancelled
+  + total_amount: decimal
+  + geo_zone: string
+}
+
+class carts {
+  + _id: ObjectId
+  + user_id: string
+  + session_id: string
+  + items: array<{
+       product_id: ObjectId,
+       quantity: int
+    }>
+  + status: string, enum: active | ordered | abandoned
+  + created_at: datetime
+  + updated_at: datetime
+  + expires_at: datetime
+}
+
+products "_id" <-- "items.product_id" orders
+products "_id" <-- "items.product_id" carts
+orders "1" --> "0..1" carts : created_from
+
+@enduml
