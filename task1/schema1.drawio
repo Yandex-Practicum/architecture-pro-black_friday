@@ -1,0 +1,58 @@
+<mxfile host="drawio-plugin" modified="2025-12-10T22:35:14.133Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" etag="7AK1F0yKtI95bOzx4La5" version="22.1.22" type="embed">
+  <diagram name="Page-1" id="-H_mtQnk-PTXWXPvYvuk">
+    <mxGraphModel dx="1033" dy="546" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="zA23MoTUsTF4_91t8viU-3" value="&lt;b&gt;Router&lt;/b&gt;&lt;br&gt;&lt;i&gt;mongos&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="290" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.998;exitY=0.586;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="zA23MoTUsTF4_91t8viU-3" target="2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="520" y="350" as="sourcePoint" />
+            <mxPoint x="570" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0;entryDx=0;entryDy=52.5;entryPerimeter=0;" edge="1" parent="1" target="zA23MoTUsTF4_91t8viU-2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="480" y="320" as="sourcePoint" />
+            <mxPoint x="530" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="7" value="&lt;b&gt;pymongo-api&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="290" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="7" target="zA23MoTUsTF4_91t8viU-3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="320" y="330" as="sourcePoint" />
+            <mxPoint x="570" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" value="&lt;b&gt;Config Server&lt;/b&gt;&lt;br&gt;&lt;i&gt;mongod&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="420" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="9" target="zA23MoTUsTF4_91t8viU-3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="520" y="350" as="sourcePoint" />
+            <mxPoint x="570" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="9" target="17">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="390" y="400" as="sourcePoint" />
+            <mxPoint x="630" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="17" value="Sharded Cluster" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="570" y="190" width="220" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="zA23MoTUsTF4_91t8viU-2" value="MongoDB&lt;br&gt;&lt;i&gt;replSet&lt;br&gt;shard1&lt;br&gt;&lt;/i&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" parent="17" vertex="1">
+          <mxGeometry x="80" y="50" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="2" value="MongoDB&lt;br&gt;&lt;i style=&quot;border-color: var(--border-color);&quot;&gt;replSet&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;shard2&lt;/i&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="17">
+          <mxGeometry x="80" y="140" width="60" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

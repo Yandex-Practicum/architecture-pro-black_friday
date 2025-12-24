@@ -1,0 +1,62 @@
+@startuml
+
+!theme plain
+top to bottom direction
+skinparam linetype ortho
+
+class carts {
+   _id: objectid <<PK>>
+   --
+   user_id: string
+   session_id: string
+   owner_key: string <<SHARD, IDX>>
+   status: string <<IDX>>
+   --
+   created_at: isodate
+   updated_at: isodate <<IDX>>
+   expires_at: isodate <<TTL>>
+   --
+   items: list
+   items.product_id: string
+   items.quantity: int32
+   items.added_at: isodate
+}
+
+class orders {
+   _id: objectid <<PK>>
+   --
+   customer_id: string <<SHARD, IDX>>
+   order_id: string <<UQ>>
+   status: string <<IDX>>
+   geo_zone: string
+   total_sum: int32
+   --
+   created_at: isodate <<IDX>>
+   updated_at: isodate
+   --
+   items: list
+   items.product_id: string
+   items.qty: int32
+   items.price: int32
+}
+
+class products {
+   _id: string <<PK>>
+   --
+   category: string <<SHARD, IDX>>
+   price: int32 <<IDX>>
+   name: string
+   --
+   created_at: isodate
+   updated_at: isodate
+   --
+   stocks: list
+   stocks.geo_zone: string <<IDX>>
+   stocks.qty: int32
+   --
+   attrs: object
+   attrs.color: string
+   attrs.memory: string
+}
+
+@enduml

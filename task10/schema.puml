@@ -1,0 +1,144 @@
+@startuml
+
+!theme plain
+top to bottom direction
+skinparam linetype ortho
+
+' =========================
+' MongoDB (коллекции) — остаются источником правды
+' =========================
+package "MongoDB (коллекции)" as mongo {
+
+class carts_mongo <<Mongo>> {
+   _id: objectid <<PK>>
+   --
+   user_id: string
+   session_id: string
+   owner_key: string <<SHARD, IDX>>
+   status: string <<IDX>>
+   --
+   created_at: isodate
+   updated_at: isodate <<IDX>>
+   expires_at: isodate <<TTL>>
+   --
+   items: list
+   items.product_id: string
+   items.quantity: int32
+   items.added_at: isodate
+}
+
+class orders_mongo <<Mongo>> {
+   _id: objectid <<PK>>
+   --
+   customer_id: string <<SHARD, IDX>>
+   order_id: string <<UQ>>
+   status: string <<IDX>>
+   geo_zone: string
+   total_sum: int32
+   --
+   created_at: isodate <<IDX>>
+   updated_at: isodate
+   --
+   items: list
+   items.product_id: string
+   items.qty: int32
+   items.price: int32
+}
+
+class products_mongo <<Mongo>> {
+   _id: string <<PK>>
+   --
+   category: string <<SHARD, IDX>>
+   price: int32 <<IDX>>
+   name: string
+   --
+   created_at: isodate
+   updated_at: isodate
+   --
+   stocks: list
+   stocks.geo_zone: string <<IDX>>
+   stocks.qty: int32
+   --
+   attrs: object
+   attrs.color: string
+   attrs.memory: string
+}
+
+}
+
+' =========================
+' Cassandra (таблицы / UDT) — 4 "горячих" таблицы
+' =========================
+package "Cassandra (4 hot tables)" as cass {
+
+class carts_by_owner <<Cassandra>> {
+   owner_key: text <<PK>>
+   --
+   status: text <<CK>>
+   updated_at: timestamp <<CK, DESC>>
+   --
+   cart_id: text
+   user_id: text
+   session_id: text
+   created_at: timestamp
+   expires_at: timestamp <<TTL>>
+   items: frozen<list<udt_cart_item>>
+}
+
+class udt_cart_item <<Cassandra UDT>> {
+   product_id: text
+   quantity: int
+   added_at: timestamp
+}
+
+class order_by_id <<Cassandra>> {
+   order_id: text <<PK>>
+   --
+   customer_id: text
+   created_at: timestamp
+   status: text
+   geo_zone: text
+   total_sum: int
+   updated_at: timestamp
+   items: frozen<list<udt_order_item>>
+}
+
+class orders_by_customer_month <<Cassandra>> {
+   customer_id: text <<PK>>
+   yyyymm: int <<PK>>
+   --
+   created_at: timestamp <<CK, DESC>>
+   order_id: text <<CK>>
+   --
+   status: text
+   geo_zone: text
+   total_sum: int
+   updated_at: timestamp
+   items: frozen<list<udt_order_item>>
+}
+
+class udt_order_item <<Cassandra UDT>> {
+   product_id: text
+   qty: int
+   price: int
+}
+
+class products_by_category_bucket <<Cassandra>> {
+   category: text <<PK>>
+   bucket: int <<PK>>
+   --
+   price: int <<CK, ASC>>
+   product_id: text <<CK>>
+   --
+   name: text
+   updated_at: timestamp
+}
+
+' связи для понимания структуры (не JOIN’ы)
+carts_by_owner --> udt_cart_item
+order_by_id --> udt_order_item
+orders_by_customer_month --> udt_order_item
+
+}
+
+@enduml
