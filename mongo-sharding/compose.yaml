@@ -1,5 +1,5 @@
 #
-#
+# MongoDB: Sharding
 #
 
 x-mongo-node: &mongo-node
@@ -125,8 +125,7 @@ services:
     ports:
       - 8080:8080
     environment:
-      #MONGODB_URL: "mongodb://mongodb-router-01,mongodb-router-02"
-      MONGODB_URL: "mongodb://mongodb-router-01"
+      MONGODB_URL: "mongodb://mongodb-router-01,mongodb-router-02"
       MONGODB_DATABASE_NAME: "somedb"
     networks:
     - app-network

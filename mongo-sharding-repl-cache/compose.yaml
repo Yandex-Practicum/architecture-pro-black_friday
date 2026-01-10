@@ -1,5 +1,6 @@
 #
-#
+# MongoDB: Sharding, Replication
+# Redis: Single Node
 #
 
 x-mongo-node: &mongo-node
@@ -109,6 +110,13 @@ services:
     <<: *mongo-router-node
     container_name: router-02
 
+  cache:
+    image: redis:latest
+    networks:
+    - app-network
+    volumes:
+    - cache-data:/data
+
   cluster-bootstrap:
     image: dh-mirror.gitverse.ru/mongo:latest
     volumes:
@@ -144,11 +152,13 @@ services:
     - storage-rs02-03
     - router-01
     - router-02
+    - cache
     ports:
     - 8080:8080
     environment:
       MONGODB_URL: "mongodb://router-01,router-02"
       MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://cache:6379"
     networks:
     - app-network
 
@@ -164,3 +174,4 @@ volumes:
   rs02-01-data:
   rs02-02-data:
   rs02-03-data:
+  cache-data:
