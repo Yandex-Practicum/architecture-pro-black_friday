@@ -1,0 +1,47 @@
+graph TD
+    %% Стилизация
+    classDef client fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef gateway fill:#ffcc00,stroke:#333,stroke-width:2px;
+    classDef discovery fill:#ccffcc,stroke:#333,stroke-width:2px;
+    classDef app fill:#99ccff,stroke:#333,stroke-width:2px;
+    classDef db fill:#eeeeee,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5;
+
+    User((User)) -->|HTTPS| LB[Load Balancer / VIP]:::client
+    
+    subgraph "Infrastructure Layer"
+        LB -->|Traffic| APIGW1[API Gateway 1]:::gateway
+        LB -->|Traffic| APIGW2[API Gateway 2]:::gateway
+        
+        %% Service Discovery
+        Consul[Consul Service Registry]:::discovery
+        
+        APIGW1 -.->|1. Get Service IPs| Consul
+        APIGW2 -.->|1. Get Service IPs| Consul
+    end
+    
+    subgraph "Application Layer (Scaled)"
+        App1[pymongo-api 1]:::app
+        App2[pymongo-api 2]:::app
+        App3[pymongo-api 3]:::app
+        
+        %% Registration
+        App1 -.->|2. Register| Consul
+        App2 -.->|2. Register| Consul
+        App3 -.->|2. Register| Consul
+    end
+    
+    %% Routing
+    APIGW1 -->|3. Proxy Request| App1
+    APIGW1 -->|3. Proxy Request| App2
+    APIGW2 -->|3. Proxy Request| App3
+    
+    %% Data Layer (Simplified)
+    subgraph "Data Layer"
+        Redis[Redis Cache]:::db
+        Mongo[Mongo Sharded Cluster]:::db
+    end
+    
+    App1 --> Redis
+    App1 --> Mongo
+    App2 --> Redis
+    App2 --> Mongo

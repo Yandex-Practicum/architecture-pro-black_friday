@@ -1,0 +1,26 @@
+graph TD
+    %% Стили те же + Redis
+    classDef app fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef redis fill:#d1c4e9,stroke:#512da8,stroke-width:2px;
+    classDef router fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef cluster fill:#eeeeee,stroke:#9e9e9e,stroke-width:1px,stroke-dasharray: 5 5;
+
+    Client((User)) -->|HTTP| API[pymongo-api]:::app
+
+    subgraph DC ["DC: sharding-repl-cache"]
+        %% Cache Flow
+        API <-->|"1. Check Cache / 3. Set Cache"| Redis[Redis Cache]:::redis
+        
+        %% DB Flow
+        API -->|"2. Cache Miss (Read DB)"| Mongos[mongos Router]:::router
+        
+        subgraph MC ["Mongo Cluster"]
+            CSRS["Config RS (3 nodes)"]:::cluster
+            RS1["Shard 1 RS (3 nodes)"]:::cluster
+            RS2["Shard 2 RS (3 nodes)"]:::cluster
+            
+            Mongos -.-> CSRS
+            Mongos --> RS1
+            Mongos --> RS2
+        end
+    end

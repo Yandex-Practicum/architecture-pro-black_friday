@@ -1,0 +1,126 @@
+name: mongo-sharding
+
+services:
+  # --- Config Server (Metadata) ---
+  configSrv:
+    image: mongo:latest
+    container_name: configSrv
+    restart: always
+    command:
+      - "--configsvr"
+      - "--replSet"
+      - "config_server"
+      - "--bind_ip_all"
+      - "--port"
+      - "27017"
+    ports:
+      - "27017:27017" # Наружу торчит как обычная монго, но это конфиг
+    volumes:
+      - config-data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  # --- Shard 1 ---
+  shard1:
+    image: mongo:latest
+    container_name: shard1
+    restart: always
+    command:
+      - "--shardsvr"
+      - "--replSet"
+      - "shard1"
+      - "--bind_ip_all"
+      - "--port"
+      - "27018"
+    ports:
+      - "27018:27018"
+    volumes:
+      - shard1-data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  # --- Shard 2 ---
+  shard2:
+    image: mongo:latest
+    container_name: shard2
+    restart: always
+    command:
+      - "--shardsvr"
+      - "--replSet"
+      - "shard2"
+      - "--bind_ip_all"
+      - "--port"
+      - "27019"
+    ports:
+      - "27019:27019"
+    volumes:
+      - shard2-data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  # --- Mongos (Router) ---
+  mongos:
+    image: mongo:latest
+    container_name: mongos
+    restart: always
+    depends_on:
+      configSrv:
+        condition: service_healthy
+      shard1:
+        condition: service_healthy
+      shard2:
+        condition: service_healthy
+    command:
+      - "mongos"
+      - "--configdb"
+      - "config_server/configSrv:27017" # Имя реплика-сета/хост:порт
+      - "--bind_ip_all"
+      - "--port"
+      - "27020"
+    ports:
+      - "27020:27020"
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27020", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  # --- Application ---
+  pymongo_api:
+    container_name: pymongo_api
+    build: 
+      context: ../api_app # Путь относительно папки mongo-sharding
+      dockerfile: Dockerfile
+    depends_on:
+      mongos:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Важно: приложение стучится в роутер!
+      MONGODB_URL: "mongodb://mongos:27020" 
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+      - app-network
+
+volumes:
+  config-data:
+  shard1-data:
+  shard2-data:
+
+networks:
+  app-network:
+    driver: bridge

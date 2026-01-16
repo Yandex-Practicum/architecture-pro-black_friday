@@ -1,0 +1,18 @@
+graph TD
+    %% Docker Compose: mongo-sharding
+    %% Стили
+    classDef app fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef router fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef config fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef shard fill:#ffebee,stroke:#c62828,stroke-width:2px;
+
+    Client((User)) -->|HTTP| API[pymongo-api]:::app
+
+    subgraph DC ["Sharded MongoDB Cluster"]
+        API -->|Access| Mongos[mongos Router]:::router
+        
+        Mongos -.->|Metadata| Config["Config Srv (1 node)"]:::config
+        
+        Mongos -->|Data Chunk A| Shard1["Shard 1 (1 node)"]:::shard
+        Mongos -->|Data Chunk B| Shard2["Shard 2 (1 node)"]:::shard
+    end
