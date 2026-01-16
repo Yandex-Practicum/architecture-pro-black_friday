@@ -1,0 +1,121 @@
+name: mongo-sharding
+
+services:
+  config-srv:
+    image: mongo:7.0
+    container_name: config-srv
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - app-network
+    volumes:
+      - ./config-data:/data/db
+    command:
+      [
+        "--configsvr",
+        "--replSet",
+        "config-server",
+        "--bind_ip_all",
+        "--port",
+        "27017"
+      ]
+    healthcheck:
+      test: mongosh --eval "db.adminCommand('ping')" --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    ports:
+      - 8082:8080
+    environment:
+      MONGODB_URL: "mongodb://mongos-router:27020"
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+      - app-network
+
+  mongos-router:
+    image: mongo:7.0
+    container_name: mongos-router
+    restart: always
+    ports:
+      - "27020:27020"
+    networks:
+      - app-network
+    command:
+      [
+        "mongos",
+        "--configdb",
+        "config-server/config-srv:27017",
+        "--bind_ip_all",
+        "--port",
+        "27020"
+      ]
+
+  shard-1:
+    image: mongo:7.0
+    container_name: shard-1
+    restart: always
+    ports:
+      - "27018:27018"
+    networks:
+      - app-network
+    volumes:
+      - ./shard-1-data:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard-1",
+        "--bind_ip_all",
+        "--port",
+        "27018"
+      ]
+    healthcheck:
+      test: mongosh --port 27018 --eval "db.adminCommand('ping')" --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  shard-2:
+    image: mongo:7.0
+    container_name: shard-2
+    restart: always
+    ports:
+      - "27019:27019"
+    networks:
+      - app-network
+    volumes:
+      - ./shard-2-data:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard-2",
+        "--bind_ip_all",
+        "--port",
+        "27019"
+      ]
+    healthcheck:
+      test: mongosh --port 27019 --eval "db.adminCommand('ping')" --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+networks:
+  app-network:
+    driver: bridge
+
+
+volumes:
+  config-data:
+  shard-1-data:
+  shard-2-data:
