@@ -1,0 +1,42 @@
+graph TD
+    %% Стили
+    classDef app fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef router fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef config fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef shard fill:#ffebee,stroke:#c62828,stroke-width:2px;
+    classDef secondary fill:#ffcdd2,stroke:#ef5350,stroke-width:1px;
+
+    Client((User)) -->|HTTP| API[pymongo-api]:::app
+
+    subgraph DC ["Sharded Cluster with HA"]
+        API -->|Connection String| Mongos[mongos Router]:::router
+        
+        %% Config Server Replica Set
+        subgraph CSRS [Config Server Replica Set]
+            Config1[Config Primary]:::config
+            Config2[Config Sec]:::config
+            Config3[Config Sec]:::config
+            Config1 --- Config2 --- Config3
+        end
+        
+        Mongos -.->|Metadata Ops| CSRS
+        
+        %% Shard 1 Replica Set
+        subgraph RS1 [Shard 1 Replica Set]
+            S1_P[Primary]:::shard
+            S1_S1[Secondary]:::secondary
+            S1_S2[Secondary]:::secondary
+            S1_P --- S1_S1 --- S1_S2
+        end
+        
+        %% Shard 2 Replica Set
+        subgraph RS2 [Shard 2 Replica Set]
+            S2_P[Primary]:::shard
+            S2_S1[Secondary]:::secondary
+            S2_S2[Secondary]:::secondary
+            S2_P --- S2_S1 --- S2_S2
+        end
+
+        Mongos -->|Write/Read| RS1
+        Mongos -->|Write/Read| RS2
+    end

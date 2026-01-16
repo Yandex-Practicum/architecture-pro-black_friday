@@ -1,0 +1,42 @@
+graph TD
+    %% Стили
+    classDef user fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef cdn fill:#ff9999,stroke:#333,stroke-width:2px;
+    classDef infra fill:#eeeeee,stroke:#999,stroke-width:1px;
+    classDef storage fill:#ccffcc,stroke:#333,stroke-width:2px;
+    classDef gateway fill:#ffcc00,stroke:#333,stroke-width:2px;
+
+    subgraph "Users (Global)"
+        UserEU((User EU)):::user
+        UserUS((User US)):::user
+        UserAsia((User Asia)):::user
+    end
+
+    subgraph "Edge Network"
+        CDN_EU["CDN PoP (Europe)"]:::cdn
+        CDN_US["CDN PoP (US)"]:::cdn
+        CDN_Asia["CDN PoP (Asia)"]:::cdn
+    end
+
+    subgraph "Origin Infrastructure (Data Center)"
+        ObjStore["Object Storage (S3)\nStatic Content: Images, CSS, JS"]:::storage
+        APIGW["API Gateway / Load Balancer"]:::gateway
+        Backend[Backend Services]:::infra
+    end
+
+    %% Flow 1: Static Content (via CDN)
+    UserEU -->|1. Get /style.css| CDN_EU
+    UserUS -->|1. Get /logo.png| CDN_US
+    UserAsia -->|1. Get /app.js| CDN_Asia
+
+    %% CDN Cache Miss Flow
+    CDN_EU -.->|2. Fetch if missing| ObjStore
+    CDN_US -.->|2. Fetch if missing| ObjStore
+    CDN_Asia -.->|2. Fetch if missing| ObjStore
+
+    %% Flow 2: Dynamic Content (Direct to Origin)
+    UserEU -->|3. API Request /cart| APIGW
+    UserUS -->|3. API Request /login| APIGW
+    UserAsia -->|3. API Request /pay| APIGW
+
+    APIGW --> Backend
