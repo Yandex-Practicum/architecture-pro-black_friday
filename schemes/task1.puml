@@ -1,0 +1,17 @@
+@startuml MongoDB Cluster with PyMongo API
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title MongoDB Cluster с подключением PyMongo API v1
+
+Container(pymongo_api, "PyMongo API", "Python", "Внешнее приложение")
+Container(config_server, "Config Server", "MongoDB", "1 нода (тест)")
+Container(query_router, "Query Router", "mongos", "Маршрутизатор")
+Container(shard1, "Shard 1", "MongoDB", "Standalone (1 нода)")
+Container(shard2, "Shard 2", "MongoDB", "Standalone (1 нода)")
+
+Rel(pymongo_api, query_router, "Запросы", "MongoDB Protocol")
+Rel(query_router, config_server, "Чтение метаданных", "MongoDB")
+Rel(query_router, shard1, "Read/Write", "MongoDB")
+Rel(query_router, shard2, "Read/Write", "MongoDB")
+
+@enduml

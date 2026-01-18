@@ -1,0 +1,63 @@
+@startuml MongoDB Cluster with PyMongo API
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title MongoDB Cluster с подключением PyMongo API v4
+
+Person(client_asia, "Клиент Азия")
+Person(client_europa, "Клиент Европа")
+Container(cdn_asia, "CDN Азия", "", "Статический контент Азии")
+Container(cache_asia, "Кеш CDN Азии", "", "Кеш статического контента Азии")
+Container(cdn_europa, "CDN Европа", "", "Статический контент Европы")
+Container(cache_europa, "Кеш CDN Европы", "", "Кеш статического контента Европы")
+Container(site, "Сайт", "", "")
+Container(gateway, "APISIX Gateway", "", "")
+Container(consul, "Consul", "", "Реестр приложений")
+Container(pymongo_api1, "PyMongo API", "Python", "Приложение")
+Container(pymongo_api2, "PyMongo API", "Python", "Приложение")
+Container(redis1, "Redis Cache", "Redis", "Кеширование запросов")
+Container(redis2, "Redis Cache", "Redis", "Кеширование запросов")
+Container(query_router, "Query Router", "mongos", "Маршрутизатор")
+
+Container(config1, "Config Server 1", "MongoDB", "Метаданные")
+Container(config2, "Config Server 2", "MongoDB", "Метаданные")
+Container(config3, "Config Server 3", "MongoDB", "Метаданные")
+
+Container(shard1_primary, "Shard 1 Primary", "MongoDB", "Primary")
+Container(shard1_secondary1, "Shard 1 Secondary 1", "MongoDB", "Replica")
+Container(shard1_secondary2, "Shard 1 Secondary 2", "MongoDB", "Replica")
+
+Container(shard2_primary, "Shard 2 Primary", "MongoDB", "Primary")
+Container(shard2_secondary1, "Shard 2 Secondary 1", "MongoDB", "Replica")
+Container(shard2_secondary2, "Shard 2 Secondary 2", "MongoDB", "Replica")
+
+Rel(client_asia, cdn_asia, "Запрос")
+Rel(cdn_asia, site, "Запрос")
+Rel(cdn_asia, cache_asia, "Запрос кеша")
+Rel(client_europa, cdn_europa, "Запрос")
+Rel(cdn_europa, site, "Запрос")
+Rel(cdn_europa, cache_europa, "Запрос кеша")
+
+Rel(site, gateway, "")
+Rel(gateway, consul, "Информация об инстансах приложения")
+Rel(consul, pymongo_api1,"Регистрация/отмена")
+Rel(consul, pymongo_api2,"Регистрация/отмена")
+
+Rel(pymongo_api1, redis1, "Кеширование (GET/SET)", "Redis Protocol")
+Rel(pymongo_api1, query_router, "Запросы (CRUD)", "MongoDB Protocol")
+
+Rel(pymongo_api2, redis2, "Кеширование (GET/SET)", "Redis Protocol")
+Rel(pymongo_api2, query_router, "Запросы (CRUD)", "MongoDB Protocol")
+
+Rel(config1, config2, "Синхронизация", "MongoDB")
+Rel(config2, config3, "Синхронизация", "MongoDB")
+Rel(query_router, config1, "Метаданные", "MongoDB")
+
+Rel(query_router, shard1_primary, "Read/Write", "MongoDB")
+Rel(shard1_primary, shard1_secondary1, "Репликация", "Oplog")
+Rel(shard1_primary, shard1_secondary2, "Репликация", "Oplog")
+
+Rel(query_router, shard2_primary, "Read/Write", "MongoDB")
+Rel(shard2_primary, shard2_secondary1, "Репликация", "Oplog")
+Rel(shard2_primary, shard2_secondary2, "Репликация", "Oplog")
+
+@enduml

@@ -1,0 +1,270 @@
+name: mongo-sharding-repl
+
+services:
+  # Config Server
+  config1:
+    container_name: config1
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+        "--configsvr",
+        "--replSet",
+        "config_server",
+        "--bind_ip_all",
+        "--port",
+        "27017"
+      ]   
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    volumes:
+      - config1_data:/data/configdb      
+    networks:
+      - mongo_cluster
+  config2:
+    container_name: config2
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+        "--configsvr",
+        "--replSet",
+        "config_server",
+        "--bind_ip_all",
+        "--port",
+        "27017"
+      ]   
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    volumes:
+      - config2_data:/data/configdb
+    networks:
+      - mongo_cluster
+
+  config3:
+    container_name: config3
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+        "--configsvr",
+        "--replSet",
+        "config_server",
+        "--bind_ip_all",
+        "--port",
+        "27017"
+      ]   
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s    
+    volumes:
+      - config3_data:/data/configdb
+    networks:
+      - mongo_cluster
+
+  # Шард 1
+  shard1_primary:
+    container_name: shard1_primary
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard1",
+        "--bind_ip_all",
+        "--port",
+        "27018"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    volumes:
+      - shard1_primary_data:/data/db
+      - ./scripts/init-shard1.js:/docker-entrypoint-initdb.d/init-shard1.js
+    networks:
+      - mongo_cluster
+
+  shard1_secondary1:
+    container_name: shard1_secondary1
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard1",
+        "--bind_ip_all",
+        "--port",
+        "27018"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    depends_on:
+      - shard1_primary
+    volumes:
+      - shard1_secondary1_data:/data/db
+      - ./scripts/init-shard1.js:/docker-entrypoint-initdb.d/init-shard1.js
+    networks:
+      - mongo_cluster
+
+  shard1_secondary2:
+    container_name: shard1_secondary2
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard1",
+        "--bind_ip_all",
+        "--port",
+        "27018"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    depends_on:
+      - shard1_primary
+      - shard1_secondary1
+    volumes:
+      - shard1_secondary2_data:/data/db
+      - ./scripts/init-shard1.js:/docker-entrypoint-initdb.d/init-shard1.js
+    networks:
+      - mongo_cluster
+
+  # Шард 2
+  shard2_primary:
+    container_name: shard2_primary
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard2",
+        "--bind_ip_all",
+        "--port",
+        "27019"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    volumes:
+      - shard2_primary_data:/data/db
+      - ./scripts/init-shard2.js:/docker-entrypoint-initdb.d/init-shard2.js
+    networks:
+      - mongo_cluster
+
+  shard2_secondary1:
+    container_name: shard2_secondary1
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard2",
+        "--bind_ip_all",
+        "--port",
+        "27019"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    depends_on:
+      - shard2_primary
+    volumes:
+      - shard2_secondary1_data:/data/db
+      - ./scripts/init-shard2.js:/docker-entrypoint-initdb.d/init-shard2.js
+    networks:
+      - mongo_cluster
+
+  shard2_secondary2:
+    container_name: shard2_secondary2
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard2",
+        "--bind_ip_all",
+        "--port",
+        "27019"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    depends_on:
+      - shard2_primary
+      - shard2_secondary1
+    volumes:
+      - shard2_secondary2_data:/data/db
+      - ./scripts/init-shard2.js:/docker-entrypoint-initdb.d/init-shard2.js
+    networks:
+      - mongo_cluster
+
+  query_router:
+    container_name: query_router
+    restart: always
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb config_server/config1:27017,config2:27017,config3:27017 --bind_ip_all --port 27020
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    depends_on:
+      - config1
+      - config2
+      - config3
+    volumes:
+      - ./scripts/init-sharding.js:/docker-entrypoint-initdb.d/init-sharding.js
+      - ./scripts/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
+    ports:
+      - "27020:27020"
+    networks:
+      - mongo_cluster
+
+  pymongo_api:
+    container_name: pymongo_api
+    restart: always
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - query_router
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://query_router:27020"
+      MONGODB_DATABASE_NAME: "somedb"      
+    networks:
+      - mongo_cluster
+
+volumes:
+  config1_data:
+  config2_data:
+  config3_data:
+  shard1_primary_data:
+  shard1_secondary1_data:
+  shard1_secondary2_data:
+  shard2_primary_data:
+  shard2_secondary1_data:
+  shard2_secondary2_data:
+
+networks:
+  mongo_cluster:
+    driver: bridge
