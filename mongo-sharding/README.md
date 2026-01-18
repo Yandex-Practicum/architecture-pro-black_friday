@@ -8,11 +8,6 @@
 docker compose up -d
 ```
 
-Инициализируем конфиг
-```shell
-docker compose up -d
-```
-
 Инициализуруем конфигурации и шардов
 
 ```shell
