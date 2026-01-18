@@ -1,0 +1,101 @@
+services:
+
+  config_srv:
+    image: mongo:latest # docker образ
+    container_name: config_mongo 
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+     app-network:
+        ipv4_address: 173.17.0.10
+    volumes:
+      - config-data:/data/db
+    command: --configsvr --replSet configserver --dbpath /data/db --port 27017 --bind_ip_all
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  mongo_router:
+    image: mongo:latest
+    container_name: mongo_router
+    restart: always
+    ports:
+      - "27020:27017"
+    networks:
+     app-network:
+        ipv4_address: 173.17.0.9
+    command: mongos --configdb configserver/config_srv:27017 --bind_ip_all --port 27017
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  shard1:
+    image: mongo:latest
+    container_name: shard1
+    restart: always
+    ports:
+      - "27018:27018"
+    command: --shardsvr --replSet rs-shard1 --dbpath /data/db --port 27018 --bind_ip_all
+    networks:
+     app-network:
+        ipv4_address: 173.17.0.8
+    volumes:
+      - shard1-data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  shard2:
+    image: mongo:latest
+    container_name: shard2
+    restart: always
+    ports:
+      - "27019:27019"
+    networks:
+     app-network:
+        ipv4_address: 173.17.0.7
+    volumes:
+      - shard2-data:/data/db
+    command: --shardsvr --replSet rs-shard2 --dbpath /data/db --port 27019 --bind_ip_all
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+  
+
+  pymongo_api:
+    container_name: pymongo_api
+    build: 
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongo_router
+    ports:
+      - 8080:8080
+    networks:
+     app-network:
+    environment:
+      MONGODB_URL: "mongodb://mongo_router"
+      MONGODB_DATABASE_NAME: "somedb"
+
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 173.17.0.0/16
+
+volumes:
+  config-data:
+  shard1-data:
+  shard2-data:
+
+
+
+
