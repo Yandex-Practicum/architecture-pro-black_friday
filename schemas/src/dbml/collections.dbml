@@ -1,0 +1,76 @@
+// Use DBML to define your database structure
+// Docs: https://www.dbml.org/docs
+// https://dbdiagram.io/d
+
+Table orders {
+  _id oid
+  client_id oid
+  created_at timestamp
+  items array 
+  status_id oid
+  sum decimal128
+  geo_zone_id oid
+}
+
+Table products {
+  _id oid
+  name string
+  cathegory_id oid
+  price decimal128
+  region1_qty integer
+  region2_qty integer
+  region3_qty integer
+  additional_attr object
+}
+
+Table carts {
+  _id oid
+  user_id oid
+  session_id oid
+  items array
+  status_id oid
+  created_at timestamp
+  expires_at timestamp
+}
+
+Table clients {
+  _id oid
+  name string
+}
+
+Table statuses {
+  _id oid
+  name string
+}
+
+Table geo_zones {
+  _id oid
+  name string
+}
+
+Table cathegories {
+  _id oid
+  name string
+}
+
+Table users {
+  _id oid
+  name string
+  client_id oid
+}
+
+Table sessions {
+  _id oid
+  created_at timestamp
+  geo_zone_id oid
+}
+
+Ref: orders.client_id > clients._id 
+Ref: orders.geo_zone_id > geo_zones._id
+Ref: orders.status_id > statuses._id
+Ref: products.cathegory_id > cathegories._id
+Ref: carts.user_id > users._id
+Ref: carts.session_id > sessions._id
+Ref: carts.status_id > statuses._id
+Ref: users.client_id > clients._id
+Ref: sessions.geo_zone_id > geo_zones._id

@@ -1,0 +1,122 @@
+name: mongo-sharding
+
+version: '3'
+services:
+  pymongo_api:
+    container_name: pymongo_api
+    build: 
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      mongos_router:
+        condition: service_started
+      configSrv:
+        condition: service_started
+      shard1:
+        condition: service_started
+      shard2:
+        condition: service_started
+    ports:
+      - 8080:8080
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.6
+    environment:
+      MONGODB_URL: "mongodb://mongos_router"
+      MONGODB_DATABASE_NAME: "somedb"
+
+  mongos_router:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: mongos_router
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.7
+    command:
+      [
+        "mongos", 
+        "--configdb", 
+        "config_server/configSrv:27019",
+        "--bind_ip_all",
+        "--port",
+        "27017"
+      ]
+    
+  configSrv:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: configSrv 
+    restart: always
+    ports:
+      - "27019:27019"
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.10
+    volumes:
+      - config-data:/data/db
+    command:
+      [
+        "--configsvr", 
+        "--replSet",
+        "config_server",
+        "--bind_ip_all",
+        "--port",
+        "27019"
+      ] 
+
+  shard1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard1
+    restart: always
+    ports:
+      - "27021:27021"
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.9
+    volumes:
+      - shard1-data:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard1",
+        "--bind_ip_all",
+        "--port",
+        "27021"
+      ]
+
+  shard2:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard2
+    restart: always
+    ports:
+      - "27022:27022"
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.8
+    volumes:
+      - shard2-data:/data/db
+    command:
+      [
+        "--shardsvr", 
+        "--replSet",
+        "shard2", 
+        "--bind_ip_all", 
+        "--port",
+        "27022"
+      ]
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 173.17.0.0/16
+
+volumes:
+  config-data:
+  shard1-data:
+  shard2-data:
+
