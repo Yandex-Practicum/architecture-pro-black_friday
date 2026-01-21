@@ -1,0 +1,466 @@
+version: '3.8'
+
+services:
+  configsvr1:
+    container_name: mongodb-configsvr1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configrs --port 27019 --bind_ip_all
+    volumes:
+      - configsvr1_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  configsvr2:
+    container_name: mongodb-configsvr2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configrs --port 27019 --bind_ip_all
+    volumes:
+      - configsvr2_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  configsvr3:
+    container_name: mongodb-configsvr3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configrs --port 27019 --bind_ip_all
+    volumes:
+      - configsvr3_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  shard1:
+    container_name: mongodb-shard1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1rs --port 27018 --bind_ip_all
+    volumes:
+      - shard1_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+
+  shard2:
+    container_name: mongodb-shard2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2rs --port 27018 --bind_ip_all
+    volumes:
+      - shard2_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+
+  shard3:
+    container_name: mongodb-shard3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard3rs --port 27018 --bind_ip_all
+    volumes:
+      - shard3_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+
+  config-init:
+    container_name: mongodb-config-init
+    image: dh-mirror.gitverse.ru/mongo:latest
+    depends_on:
+      configsvr1:
+        condition: service_healthy
+      configsvr2:
+        condition: service_healthy
+      configsvr3:
+        condition: service_healthy
+    command: >
+      bash -c "
+      echo 'Initializing config replica set...'
+      sleep 20
+      
+      mongosh --host configsvr1:27019 --eval '
+        try {
+          rs.initiate({
+            _id: \"configrs\",
+            configsvr: true,
+            members: [
+              {_id: 0, host: \"configsvr1:27019\"},
+              {_id: 1, host: \"configsvr2:27019\"},
+              {_id: 2, host: \"configsvr3:27019\"}
+            ]
+          });
+          print(\"✓ Replica set initialized\");
+        } catch (e) {
+          if (e.codeName === \"AlreadyInitialized\") {
+            print(\"✓ Already initialized\");
+          } else {
+            print(\"⚠ Error:\", e.errmsg);
+            // Не падаем, продолжаем
+          }
+        }
+      '
+      
+      echo 'Waiting for stabilization...'
+      sleep 30
+      until mongosh --host configsvr1:27019 --quiet --eval '
+        try {
+          quit(rs.isMaster().ismaster ? 0 : 1)
+        } catch(e) {
+          quit(1)
+        }
+      '; do
+        echo "Waiting for configsvr primary..."
+        sleep 5
+      done
+      echo '✅ Config initialization done'
+      # Завершаем работу с успехом
+      exit 0
+      "
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--host", "configsvr1:27019", "--quiet", "--eval", "rs.isMaster().ismaster"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  mongos1:
+    container_name: mongodb-mongos1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb configrs/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27017
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand({ping: 1}).ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  mongos2:
+    container_name: mongodb-mongos2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb configrs/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27017
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand({ping: 1}).ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  mongos3:
+    container_name: mongodb-mongos3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb configrs/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27017
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand({ping: 1}).ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+      
+  mongo-init:
+    container_name: mongodb-init
+    image: dh-mirror.gitverse.ru/mongo:latest
+    depends_on:
+      shard1:
+        condition: service_healthy
+      shard2:
+        condition: service_healthy
+      shard3:
+        condition: service_healthy
+      mongos1:
+        condition: service_healthy
+      mongos2:
+        condition: service_healthy
+      mongos3:
+        condition: service_healthy
+    command: >
+      bash -c "
+      echo '=== MongoDB Sharding Cluster Initialization ==='
+      
+      echo ''
+      echo '1. Waiting for all services to stabilize...'
+      sleep 30
+      
+      echo ''
+      echo '2. Initializing shard1 replica set...'
+      mongosh --host shard1:27018 --eval '
+        try {
+          const result = rs.initiate({
+            _id: \"shard1rs\",
+            configsvr: false,
+            members: [
+              {_id: 0, host: \"shard1:27018\", priority: 1}
+            ]
+          });
+          console.log(\"✓ Shard1 replica set initialized\");
+          exit(0);
+        } catch (e) {
+          if (e.codeName === \"AlreadyInitialized\" || e.message.includes(\"already initialized\")) {
+            console.log(\"✓ Shard1 already initialized\");
+            exit(0);
+          }
+          console.log(\"ℹ Shard1 retry needed:\", e.message);
+          exit(1);
+        }
+      '
+      
+      echo ''
+      echo '3. Initializing shard2 replica set...'
+       mongosh --host shard2:27018 --eval '
+        try {
+          const result = rs.initiate({
+            _id: \"shard2rs\",
+            configsvr: false,
+            members: [
+              {_id: 0, host: \"shard2:27018\", priority: 1}
+            ]
+          });
+          console.log(\"✓ Shard2 replica set initialized\");
+          exit(0);
+        } catch (e) {
+          if (e.codeName === \"AlreadyInitialized\" || e.message.includes(\"already initialized\")) {
+            console.log(\"✓ Shard2 already initialized\");
+            exit(0);
+          }
+          console.log(\"ℹ Shard2 retry needed:\", e.message);
+          exit(1);
+        }
+      '; 
+      
+      echo ''
+      echo '4. Initializing shard3 replica set...'
+       mongosh --host shard3:27018 --eval '
+        try {
+          const result = rs.initiate({
+            _id: \"shard3rs\",
+            configsvr: false,
+            members: [
+              {_id: 0, host: \"shard3:27018\", priority: 1}
+            ]
+          });
+          console.log(\"✓ Shard3 replica set initialized\");
+          exit(0);
+        } catch (e) {
+          if (e.codeName === \"AlreadyInitialized\" || e.message.includes(\"already initialized\")) {
+            console.log(\"✓ Shard3 already initialized\");
+            exit(0);
+          }
+          console.log(\"ℹ Shard3 retry needed:\", e.message);
+          exit(1);
+        }
+      ';
+      
+      echo ''
+      echo '5. Waiting for shards to elect primary...'
+      sleep 20
+      
+      echo ''
+      echo '6. Verifying shard replica sets are ready...'
+      mongosh --host shard1:27018 --eval '
+        try {
+          const status = rs.status();
+          if (status.ok === 1) {
+            console.log(\"✓ Shard1 replica set is healthy\");
+            console.log(\"  Primary:\", status.members.find(m => m.state === 1)?.name || \"none\");
+            exit(0);
+          } else {
+            console.log(\"✗ Shard1 not healthy\");
+            exit(1);
+          }
+        } catch (e) {
+          console.log(\"✗ Shard1 error:\", e.message);
+          exit(1);
+        }
+      '
+      
+      echo ''
+      echo 'Waiting for shard primaries...'
+      
+      for SHARD in 'shard1' 'shard2' 'shard3'; do
+        until mongosh --host $$SHARD:27018 --quiet --eval '
+          try {
+            rs.isMaster().ismaster
+          } catch(e) { false }
+        ' | grep -q true; do
+          echo "Waiting for primary on $$SHARD..."
+          sleep 5
+        done
+      done
+
+      echo '7. Adding shards to cluster via mongos1...'
+      mongosh --host mongos1:27017 --eval '
+        // Функция для добавления шарда
+        function addShardToCluster(shardName, replicaSetName, host) {
+          const shardString = replicaSetName + \"/\" + host;
+          console.log(\"Adding\", shardName, \"as\", shardString);
+          
+          try {
+            const result = sh.addShard(shardString);
+            if (result.ok !== 1) {
+              throw new Error(JSON.stringify(res));
+            }
+            console.log(\"✓\", shardName, \"added successfully:\", result);
+            return true;
+          } catch (e) {
+            if (e.message.includes(\"already exists\") || e.message.includes(\"already been added\")) {
+              console.log(\"✓\", shardName, \"already in cluster\");
+              return true;
+            }
+            console.log(\"✗ Error adding\", shardName, \":\", e.message);
+            return false;
+          }
+        }
+        
+
+        const shardsAdded = 
+          addShardToCluster(\"shard1\", \"shard1rs\", \"mongodb-shard1:27018\") &&
+          addShardToCluster(\"shard2\", \"shard2rs\", \"mongodb-shard2:27018\") &&
+          addShardToCluster(\"shard3\", \"shard3rs\", \"mongodb-shard3:27018\");
+        
+        if (!shardsAdded) {
+          throw new Error(\"Failed to add one or more shards\");
+        }
+        
+        // Проверяем результат
+        console.log(\"\\n=== Verifying shards in cluster ===\");
+        const configDb = db.getSiblingDB(\"config\");
+        const shards = configDb.shards.find().toArray();
+        console.log(\"Total shards found:\", shards.length);
+        
+        if (shards.length === 0) {
+          console.log(\"✗ ERROR: No shards in config database!\");
+          throw new Error(\"No shards added\");
+        }
+        
+        shards.forEach(s => {
+          console.log(\"  -\", s._id, \"->\", s.host);
+        });
+        
+        console.log(\"\\n✅ All shards added successfully!\");
+      '
+      
+      echo ''
+      echo '8. Enabling sharding for database \"somedb\"...'
+      mongosh --host mongos1:27017 --eval '
+        try {
+          sh.enableSharding(\"somedb\");
+          console.log(\"✓ Sharding enabled for database: somedb\");
+        } catch (e) {
+          if (e.message.includes(\"already enabled\")) {
+            console.log(\"✓ Sharding already enabled for somedb\");
+          } else {
+            console.log(\"✗ Error enabling sharding:\", e.message);
+            throw e;
+          }
+        }
+        
+        // Создаем тестовую коллекцию
+        db = db.getSiblingDB(\"somedb\");
+        db.testCollection.insertOne({test: \"initialization complete\"});
+        console.log(\"✓ Test document inserted\");
+      '
+      
+      echo ''
+      echo '9. Refreshing metadata on all mongos routers...'
+      mongosh --host mongos1:27017 --eval 'try { db.adminCommand({flushRouterConfig: 1}); console.log(\"✓ mongos1 metadata refreshed\"); } catch(e) { console.log(\"ℹ mongos1:\", e.errmsg); }'
+      mongosh --host mongos2:27017 --eval 'try { db.adminCommand({flushRouterConfig: 1}); console.log(\"✓ mongos2 metadata refreshed\"); } catch(e) { console.log(\"ℹ mongos2:\", e.errmsg); }'
+      mongosh --host mongos3:27017 --eval 'try { db.adminCommand({flushRouterConfig: 1}); console.log(\"✓ mongos3 metadata refreshed\"); } catch(e) { console.log(\"ℹ mongos3:\", e.errmsg); }'
+      
+      echo ''
+      echo '=== Final Cluster Status ==='
+      mongosh --host mongos1:27017 --quiet --eval '
+        print(\"\\nShard Status:\");
+        const shardStatus = sh.status();
+        
+        print(\"Shards (\" + shardStatus.shards.length + \"):\");
+        shardStatus.shards.forEach(s => {
+          print(\"  •\", s._id, \"-\", s.host);
+        });
+        
+        print(\"\\n✅ MongoDB Sharding Cluster is ready!\");
+        print(\"   Shards:\", shardStatus.shards.length);
+        print(\"   Database: somedb (sharding enabled)\");
+      '
+      
+      echo ''
+      echo '✅ Initialization complete! Cluster is ready for use.'
+      echo ''
+      echo '🔌 Connection string for applications:'
+      echo '  mongodb://mongos1:27017,mongos2:27017,mongos3:27017/somedb'
+      echo ''
+
+      "
+    networks:
+      - mongodb-network
+
+  mongo_sharding:
+    container_name: mongo_sharding
+    build: 
+      context: mongo-sharding
+      dockerfile: Dockerfile
+    depends_on:
+      mongo-init:
+        condition: service_started
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://mongos1:27017,mongos2:27017,mongos3:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+      - mongodb-network
+
+networks:
+  mongodb-network:
+    driver: bridge
+
+volumes:
+  configsvr1_data:
+  configsvr2_data:
+  configsvr3_data:
+  shard1_data:
+  shard2_data:
+  shard3_data:
