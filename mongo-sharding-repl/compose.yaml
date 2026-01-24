@@ -1,0 +1,135 @@
+name: mongo-sharding-repl
+
+services:
+  # Config Servers Replica Set
+  configSrv1:
+    container_name: repl-configSrv1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configReplSet --port 27017 --dbpath /data/db
+    volumes:
+      - configSrv1_data:/data/db
+    networks:
+      - mongo-sharding-repl-network
+
+  configSrv2:
+    container_name: repl-configSrv2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configReplSet --port 27017 --dbpath /data/db
+    volumes:
+      - configSrv2_data:/data/db
+    networks:
+      - mongo-sharding-repl-network
+
+  configSrv3:
+    container_name: repl-configSrv3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configReplSet --port 27017 --dbpath /data/db
+    volumes:
+      - configSrv3_data:/data/db
+    networks:
+      - mongo-sharding-repl-network
+
+  # Shard 1 Replica Set (3 replicas)
+  shard1-1:
+    container_name: repl-shard1-1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard1-1_data:/data/db
+    networks:
+      - mongo-sharding-repl-network
+
+  shard1-2:
+    container_name: repl-shard1-2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard1-2_data:/data/db
+    networks:
+      - mongo-sharding-repl-network
+
+  shard1-3:
+    container_name: repl-shard1-3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard1-3_data:/data/db
+    networks:
+      - mongo-sharding-repl-network
+
+  # Shard 2 Replica Set (3 replicas)
+  shard2-1:
+    container_name: repl-shard2-1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2ReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - shard2-1_data:/data/db
+    networks:
+      - mongo-sharding-repl-network
+
+  shard2-2:
+    container_name: repl-shard2-2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2ReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - shard2-2_data:/data/db
+    networks:
+      - mongo-sharding-repl-network
+
+  shard2-3:
+    container_name: repl-shard2-3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2ReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - shard2-3_data:/data/db
+    networks:
+      - mongo-sharding-repl-network
+
+  # Mongos Router
+  mongos:
+    container_name: repl-mongos
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb configReplSet/repl-configSrv1:27017,repl-configSrv2:27017,repl-configSrv3:27017 --bind_ip_all --port 27017
+    depends_on:
+      - configSrv1
+      - configSrv2
+      - configSrv3
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+    networks:
+      - mongo-sharding-repl-network
+
+  # API Application
+  pymongo_api:
+    container_name: repl-pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos
+    ports:
+      - 8081:8080
+    environment:
+      MONGODB_URL: "mongodb://repl-mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+      - mongo-sharding-repl-network
+
+volumes:
+  configSrv1_data:
+  configSrv2_data:
+  configSrv3_data:
+  shard1-1_data:
+  shard1-2_data:
+  shard1-3_data:
+  shard2-1_data:
+  shard2-2_data:
+  shard2-3_data:
+
+networks:
+  mongo-sharding-repl-network:
+    driver: bridge

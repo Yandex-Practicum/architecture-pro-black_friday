@@ -1,0 +1,150 @@
+name: sharding-repl-cache
+
+services:
+  # Config Servers Replica Set
+  configSrv1:
+    container_name: cache-configSrv1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configReplSet --port 27017 --dbpath /data/db
+    volumes:
+      - configSrv1_data:/data/db
+    networks:
+      - sharding-repl-cache-network
+
+  configSrv2:
+    container_name: cache-configSrv2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configReplSet --port 27017 --dbpath /data/db
+    volumes:
+      - configSrv2_data:/data/db
+    networks:
+      - sharding-repl-cache-network
+
+  configSrv3:
+    container_name: cache-configSrv3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configReplSet --port 27017 --dbpath /data/db
+    volumes:
+      - configSrv3_data:/data/db
+    networks:
+      - sharding-repl-cache-network
+
+  # Shard 1 Replica Set (3 replicas)
+  shard1-1:
+    container_name: cache-shard1-1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard1-1_data:/data/db
+    networks:
+      - sharding-repl-cache-network
+
+  shard1-2:
+    container_name: cache-shard1-2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard1-2_data:/data/db
+    networks:
+      - sharding-repl-cache-network
+
+  shard1-3:
+    container_name: cache-shard1-3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1ReplSet --port 27018 --dbpath /data/db
+    volumes:
+      - shard1-3_data:/data/db
+    networks:
+      - sharding-repl-cache-network
+
+  # Shard 2 Replica Set (3 replicas)
+  shard2-1:
+    container_name: cache-shard2-1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2ReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - shard2-1_data:/data/db
+    networks:
+      - sharding-repl-cache-network
+
+  shard2-2:
+    container_name: cache-shard2-2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2ReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - shard2-2_data:/data/db
+    networks:
+      - sharding-repl-cache-network
+
+  shard2-3:
+    container_name: cache-shard2-3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2ReplSet --port 27019 --dbpath /data/db
+    volumes:
+      - shard2-3_data:/data/db
+    networks:
+      - sharding-repl-cache-network
+
+  # Mongos Router
+  mongos:
+    container_name: cache-mongos
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb configReplSet/cache-configSrv1:27017,cache-configSrv2:27017,cache-configSrv3:27017 --bind_ip_all --port 27017
+    depends_on:
+      - configSrv1
+      - configSrv2
+      - configSrv3
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+    networks:
+      - sharding-repl-cache-network
+
+  # Redis Cache
+  redis:
+    container_name: cache-redis
+    image: dh-mirror.gitverse.ru/redis:latest
+    ports:
+      - 6379:6379
+    networks:
+      - sharding-repl-cache-network
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  # API Application
+  pymongo_api:
+    container_name: cache-pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos
+      - redis
+    ports:
+      - 8082:8080
+    environment:
+      MONGODB_URL: "mongodb://cache-mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis:6379"
+    networks:
+      - sharding-repl-cache-network
+
+volumes:
+  configSrv1_data:
+  configSrv2_data:
+  configSrv3_data:
+  shard1-1_data:
+  shard1-2_data:
+  shard1-3_data:
+  shard2-1_data:
+  shard2-2_data:
+  shard2-3_data:
+  redis_data:
+
+networks:
+  sharding-repl-cache-network:
+    driver: bridge
