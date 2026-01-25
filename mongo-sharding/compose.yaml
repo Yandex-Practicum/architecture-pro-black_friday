@@ -15,7 +15,7 @@ x-mongo-node: &mongo-node
   - '--port'
   - '27017'
   healthcheck:
-    test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+    test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
     interval: 5s
     start_period: 10s
 
