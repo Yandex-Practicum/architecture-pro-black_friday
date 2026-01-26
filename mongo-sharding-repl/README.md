@@ -1,7 +1,8 @@
+
 ## Запуск проекта.
 1. Запускаем docker-compose:
 ```bash
-    docker-compose -f sharding-repl-cache.yaml up -d 
+    docker-compose -f mongo-sharding-repl.yaml up -d 
 ```	
 2. Теперь можно пользоваться, создадим шардированную коллекцию:
 ```bash
@@ -51,5 +52,5 @@ done
 
 6. Удаляем контейнеры:
 ```bash
-  docker-compose -f sharding-repl-cache.yaml down -v
+  docker-compose -f mongo-sharding-repl.yaml down -v
   ```

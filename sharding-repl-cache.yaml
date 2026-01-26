@@ -153,6 +153,65 @@ services:
       timeout: 10s
       retries: 15
       start_period: 40s
+      
+      
+  # Реплики для Shard 1
+  shard1-replica1:
+    container_name: mongodb-shard1-replica1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1rs --port 27018 --bind_ip_all
+    volumes:
+      - shard1_replica1_data:/data/db
+    networks:
+      - mongodb-network
+
+  shard1-replica2:
+    container_name: mongodb-shard1-replica2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1rs --port 27018 --bind_ip_all
+    volumes:
+      - shard1_replica2_data:/data/db
+    networks:
+      - mongodb-network
+
+  # Реплики для Shard 2
+  shard2-replica1:
+    container_name: mongodb-shard2-replica1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2rs --port 27018 --bind_ip_all
+    volumes:
+      - shard2_replica1_data:/data/db
+    networks:
+      - mongodb-network
+
+  shard2-replica2:
+    container_name: mongodb-shard2-replica2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2rs --port 27018 --bind_ip_all
+    volumes:
+      - shard2_replica2_data:/data/db
+    networks:
+      - mongodb-network
+
+  # Реплики для Shard 3
+  shard3-replica1:
+    container_name: mongodb-shard3-replica1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard3rs --port 27018 --bind_ip_all
+    volumes:
+      - shard3_replica1_data:/data/db
+    networks:
+      - mongodb-network
+
+  shard3-replica2:
+    container_name: mongodb-shard3-replica2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard3rs --port 27018 --bind_ip_all
+    volumes:
+      - shard3_replica2_data:/data/db
+    networks:
+      - mongodb-network
+
 
   mongo-init:
     container_name: mongodb-init
@@ -172,14 +231,50 @@ services:
         condition: service_healthy
     volumes:
       - ./scripts:/scripts
-    command: ["/scripts/init-shards.sh"]
+    command: ["/scripts/init-shards-repl.sh"]
     networks:
       - mongodb-network
+      
+      
+      
+  redis:
+    container_name: mongodb-redis-cache
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./sharding-repl-cache/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis-commander:
+    container_name: mongodb-redis-commander
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=admin123
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - mongodb-network
+    restart: unless-stopped
+
 
   mongo_sharding:
     container_name: mongo_sharding
     build: 
-      context: mongo-sharding
+      context: sharding-repl-cache
       dockerfile: Dockerfile
     depends_on:
       mongo-init:
@@ -189,6 +284,7 @@ services:
     environment:
       MONGODB_URL: "mongodb://mongos1:27017,mongos2:27017,mongos3:27017/?retryWrites=true&w=majority"
       MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis:6379"
     networks:
       - mongodb-network
 
@@ -203,3 +299,12 @@ volumes:
   shard1_data:
   shard2_data:
   shard3_data:
+  
+  shard1_replica1_data:
+  shard1_replica2_data:
+  shard2_replica1_data:
+  shard2_replica2_data:
+  shard3_replica1_data:
+  shard3_replica2_data:
+  
+  redis_data:
