@@ -1,0 +1,111 @@
+@startuml МобильныйМир_ERD
+
+' Настройки
+hide circle
+skinparam linetype ortho
+
+' Сущности
+entity "products" {
+  * _id : ObjectId <<shard_key, **HASHED**>>
+  --
+  name : string
+  category : string
+  price : decimal
+  stock : embedded_document[]
+  attributes : embedded_document
+  --
+  **Индексы:**
+  {category, price}
+  {geo_zone}
+}
+
+entity "orders" {
+  * _id : ObjectId
+  --
+  * user_id : string <<shard_key, **RANGED**>>
+  created_at : datetime
+  items : embedded_document[]
+  status : string
+  total_amount : decimal
+  geo_zone : string
+  --
+  **Индексы:**
+  {_id} <<global_secondary>>
+  {user_id, created_at}
+}
+
+entity "carts" {
+  * _id : ObjectId
+  --
+  * session_id : string <<shard_key, **HASHED**>>
+  user_id : string <<nullable>>
+  items : embedded_document[]
+  status : string
+  created_at : datetime
+  updated_at : datetime
+  expires_at : datetime <<TTL>>
+  --
+  **Индексы:**
+  {user_id, status} <<global_secondary>>
+  {updated_at} <<TTL>>
+  {status, expires_at}
+}
+
+' Связи между сущностями
+products ||..o{ orders : "включает в"
+note on link
+  orders.items содержит product_id
+  и информацию о товаре на момент заказа
+end note
+
+products ||..o{ carts : "добавляется в"
+note on link
+  carts.items содержит product_id
+  и количество
+end note
+
+orders ||..|| carts : "создаётся из"
+note on link
+  Корзина помечается как "ordered"
+  при создании заказа
+end note
+
+' Встраиваемые документы
+entity "stock_by_zone" as stock {
+  --
+  geo_zone : string
+  quantity : int
+}
+
+entity "product_item" as pitem {
+  --
+  product_id : ObjectId
+  name : string
+  price_at_order : decimal
+  quantity : int
+}
+
+entity "cart_item" as citem {
+  --
+  product_id : ObjectId
+  quantity : int
+  added_at : datetime
+}
+
+entity "product_attributes" as pattr {
+  --
+  color : string <<nullable>>
+  size : string <<nullable>>
+  brand : string <<nullable>>
+  model : string <<nullable>>
+}
+
+' Связи для встраиваемых документов
+products "1" *-- "1..*" stock : "остатки по зонам"
+orders "1" *-- "1..*" pitem : "товары в заказе"
+carts "1" *-- "0..*" citem : "товары в корзине"
+products "1" *-- "0..1" pattr : "атрибуты"
+
+
+
+@enduml
