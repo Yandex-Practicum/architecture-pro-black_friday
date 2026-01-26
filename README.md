@@ -1,4 +1,4 @@
-## Запуск проекта.
+﻿## Запуск проекта.
 1. Запускаем docker-compose:
 ```bash
     docker-compose -f sharding-repl-cache.yaml up -d 
