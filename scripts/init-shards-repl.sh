@@ -438,6 +438,24 @@ for shard in shard1 shard2 shard3; do
 done	
 
 echo ''
+echo '=== Init data ==='
+result=$(mongosh --host mongos1:27017 --eval "
+    db = db.getSiblingDB('somedb');	
+    db.createCollection('helloDoc');
+	sleep(10000);
+    print('✓ Created collection helloDoc\n'); 
+    sh.shardCollection('somedb.helloDoc', { age: 'hashed' });
+	sleep(10000);
+    print('✓ Sharded collection with hashed key on age field\n');  
+    for (let i = 0; i < 1000; i++) {
+        db.helloDoc.insertOne({age: i, name: 'ly' + i});
+    }
+")
+
+echo ''
+echo $result
+
+echo ''
 echo '✅ Initialization complete! Cluster is ready for use.'
 echo ''
 echo '🔌 Connection string for applications:'
