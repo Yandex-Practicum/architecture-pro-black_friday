@@ -1,35 +1,76 @@
 # pymongo-api
 
-## Как запустить
+## Задание 1
 
-Запускаем mongodb и приложение
+Схемы:
+- Изначальная: ![](./task1-initial.drawio.png)
+- Шардирование: ![](./task1-shards.drawio.png)
+- Репликация: ![](./task1-replicas.drawio.png)
+- Кеш: ![](./task1-cache.drawio.png)
+
+
+## Задание 2
 
 ```shell
+cd mongo-sharding
 docker compose up -d
-```
-
-Заполняем mongodb данными
-
-```shell
 ./scripts/mongo-init.sh
 ```
 
-## Как проверить
+Открыть: http://localhost:8080
 
-### Если вы запускаете проект на локальной машине
 
-Откройте в браузере http://localhost:8080
-
-### Если вы запускаете проект на предоставленной виртуальной машине
-
-Узнать белый ip виртуальной машины
+## Задание 3
 
 ```shell
-curl --silent http://ifconfig.me
+cd mongo-sharding-repl
+docker compose up -d
+./scripts/mongo-init.sh
 ```
 
-Откройте в браузере http://<ip виртуальной машины>:8080
+Открыть: http://localhost:8080
 
-## Доступные эндпоинты
 
-Список доступных эндпоинтов, swagger http://<ip виртуальной машины>:8080/docs
+## Задание 4
+
+```shell
+cd sharding-repl-cache
+docker compose up -d
+./scripts/mongo-init.sh
+```
+
+Открыть: http://localhost:8080
+
+Проверка кеширования:
+```bash
+time curl -s http://localhost:8080/helloDoc/users > /dev/null
+```
+
+## Задание 5
+
+Схема: ![](./task1-gw.drawio.png)
+
+
+## Задание 6
+
+Схема: ![](./task1-cdn.drawio.png)
+
+
+## Задание 7
+
+[Проектирование схем коллекций для шардирования](./task7/README.md)
+
+
+## Задание 8
+
+[Выявление и устранение горячих шардов](./task8/README.md)
+
+
+## Задание 9
+
+[Настройка чтения с реплик и консистентность](./task9/README.md)
+
+
+## Задание 10
+
+[Миграция на Cassandra](./task10/README.md)
