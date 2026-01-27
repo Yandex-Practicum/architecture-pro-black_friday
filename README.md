@@ -3,35 +3,20 @@
 ```bash
     docker-compose -f sharding-repl-cache.yaml up -d 
 ```	
-2. Теперь можно пользоваться, создадим шардированную коллекцию:
-```bash
-    docker composexec -T mongos1 mongosml exec -T mongos1 mongosh --port 27017 --quiet <<EOF
-    use somedb
-    db.createCollection("helloDoc")
+В результате у нас запустился кластер mongodb, база заполнена тестовыми данными.
 
-    sh.shardCollection("somedb.helloDoc", { "age": "hashed" })
-    print("Collection sharded with hashed key on 'age' field");
-    EOF
-  ```  
-3. Запишем в коллекцию данные:
+2. Проверим как распределились данные:
 ```bash
-    docker compos exec -T mongos1 mongosml exec -T mongos1 mongosh --port 27017 --quiet <<EOF
-use somedb
-for(var i = 0; i < 1000; i++) db.helloDoc.insertOne({age:i, name:"ly"+i})
-EOF
-```
-4. Проверим как распределились данные:
-```bash
-    docker composexec -T mongos1 mongosml exec -T mongos1 mongosh --port 27017 --quiet <<EOF
+    docker-compose -f mongo-sharding-repl.yaml exec -T mongos1 mongosh --port 27017 --quiet <<EOF
 use somedb
 db.helloDoc.getShardDistribution()
 EOF
 ```
-5. Проверяем состояние реплик:
+3. Проверяем состояние реплик:
 ```bash
 for shard in shard1 shard2 shard3; do
   echo "=== $shard ==="
-  docker exec mongodb-$shard mongosh --port 27018 --quiet --eval "
+  docker-compose -f mongo-sharding-repl.yaml exec $shard mongosh --port 27018 --quiet --eval "
     try {
       const status = rs.status();
       print('Members:', status.members.length);
@@ -49,7 +34,15 @@ for shard in shard1 shard2 shard3; do
 done
 ```
 
-6. Удаляем контейнеры:
+4. Удаляем контейнеры:
 ```bash
   docker-compose -f sharding-repl-cache.yaml down -v
   ```
+  
+## Исправление ошибок.
+
+1. Ошибка в контейнерах mongos возникала из-за того, что config server не отвечал роутеру. Поскольку ошибка не воспроизвелась на локальной машине, было решено изменить подход:
+Теперь создается replica set config серверов состоящий из одного инстанса, а затем добавляются остальные. 
+Если ошибка всё равно будет воспроизводиться, нужны будут логи init-config и контейнеров config серверов.
+2. Инициализация тестовых данных была перенесена в скрипты init-shards, теперь они заполняются при запуске контейнеров.
+3. Команды для проверки были приведены к единому виду.

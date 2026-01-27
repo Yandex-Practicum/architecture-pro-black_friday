@@ -51,9 +51,7 @@ while [ $attempt -le 15 ]; do
                 _id: "configrs",
                 configsvr: true,
                 members: [
-                    {_id: 0, host: "configsvr1:27019", priority: 1},
-                    {_id: 1, host: "configsvr2:27019", priority: 0.5},
-                    {_id: 2, host: "configsvr3:27019", priority: 0.5}
+                    {_id: 0, host: "configsvr1:27019", priority: 1}
                 ]
             };
             
@@ -95,14 +93,13 @@ echo '3. Waiting for replica set to elect primary...'
 i=1
 PRIMARY_FOUND=false
 while [ $i -le 60 ]; do
-    # Проверяем все узлы на наличие primary
-    for node in configsvr1 configsvr2 configsvr3; do
-        if mongosh --host $node:27019 --eval "rs.isMaster().ismaster" --quiet 2>/dev/null | grep -q 'true'; then
-            echo "✓ Found primary on $node"
+    
+        if mongosh --host configsvr1:27019 --eval "rs.isMaster().ismaster" --quiet 2>/dev/null | grep -q 'true'; then
+            echo "✓ Found primary on configsvr1"
             PRIMARY_FOUND=true
-            break 2
+            break
         fi
-    done
+    
     
     if [ $i -eq 60 ]; then
         echo "✗ Config replica set failed to elect primary after 60 attempts"
@@ -117,11 +114,20 @@ while [ $i -le 60 ]; do
 done
 
 echo ''
+echo '3-1. Adding replicas...'
+mongosh --host configsvr1:27019 --eval "
+    try { rs.add('configsvr2:27019') } catch(e) {}
+    try { rs.add('configsvr3:27019') } catch(e) {}
+    print('✓ Replicas added');
+" --quiet 2>/dev/null || true
+sleep 10
+
+echo ''
 echo '4. Verifying replica set is healthy...'
 
 i=1
 while [ $i -le 30 ]; do
-    if mongosh --host configsvr1:27019 --eval "rs.status().ok" --quiet 2>/dev/null | grep -q '1'; then
+    if mongosh --host configsvr3:27019 --eval "rs.status().ok" --quiet 2>/dev/null | grep -q '1'; then
         echo "✓ Replica set is healthy"
         break
     fi
