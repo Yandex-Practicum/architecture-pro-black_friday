@@ -7,7 +7,3 @@
 docker compose exec -T router-01 mongosh somedb <<EOF
 for(var i = 0; i < 1000; i++) db.helloDoc.insertOne({age:i, name:"ly"+i})
 EOF
-
-docker compose exec -T router-01 mongosh somedb <<EOF
-for(var i = 0; i < 1000; i++) db.carts.insertOne({owner_id: String(i), status: "active"})
-EOF
