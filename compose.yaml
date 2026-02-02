@@ -1,7 +1,7 @@
 services:
   mongodb1:
     container_name: mongodb1
-    image: dh-mirror.gitverse.ru/mongo:latest
+    image: mongo:latest
     volumes:
       - mongodb1_data_container:/data/db
 
