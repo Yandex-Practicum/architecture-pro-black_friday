@@ -1,0 +1,205 @@
+services:
+  configsvr1:
+    container_name: mongodb-configsvr1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configrs --port 27019 --bind_ip_all
+    volumes:
+      - configsvr1_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  configsvr2:
+    container_name: mongodb-configsvr2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configrs --port 27019 --bind_ip_all
+    volumes:
+      - configsvr2_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  configsvr3:
+    container_name: mongodb-configsvr3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --configsvr --replSet configrs --port 27019 --bind_ip_all
+    volumes:
+      - configsvr3_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+
+  config-init:
+    container_name: mongodb-config-init
+    image: dh-mirror.gitverse.ru/mongo:latest
+    depends_on:
+      configsvr1:
+        condition: service_healthy
+      configsvr2:
+        condition: service_healthy
+      configsvr3:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts
+    command: ["/scripts/init-config.sh"]
+    networks:
+      - mongodb-network
+
+  mongos1:
+    container_name: mongodb-mongos1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb configrs/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27017
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand({ping: 1}).ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  mongos2:
+    container_name: mongodb-mongos2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb configrs/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27017
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand({ping: 1}).ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  mongos3:
+    container_name: mongodb-mongos3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongos --configdb configrs/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all --port 27017
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand({ping: 1}).ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  shard1:
+    container_name: mongodb-shard1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard1rs --port 27018 --bind_ip_all
+    volumes:
+      - shard1_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+
+  shard2:
+    container_name: mongodb-shard2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard2rs --port 27018 --bind_ip_all
+    volumes:
+      - shard2_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+
+  shard3:
+    container_name: mongodb-shard3
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: mongod --shardsvr --replSet shard3rs --port 27018 --bind_ip_all
+    volumes:
+      - shard3_data:/data/db
+    networks:
+      - mongodb-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+
+  mongo-init:
+    container_name: mongodb-init
+    image: dh-mirror.gitverse.ru/mongo:latest
+    depends_on:
+      mongos1:
+        condition: service_healthy
+      mongos2:
+        condition: service_healthy
+      mongos3:
+        condition: service_healthy
+      shard1:
+        condition: service_healthy
+      shard2:
+        condition: service_healthy
+      shard3:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts
+    command: ["/scripts/init-shards.sh"]
+    networks:
+      - mongodb-network
+
+  mongo_sharding:
+    container_name: mongo_sharding
+    build: 
+      context: mongo-sharding
+      dockerfile: Dockerfile
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://mongos1:27017,mongos2:27017,mongos3:27017/?retryWrites=true&w=majority"
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+      - mongodb-network
+
+networks:
+  mongodb-network:
+    driver: bridge
+
+volumes:
+  configsvr1_data:
+  configsvr2_data:
+  configsvr3_data:
+  shard1_data:
+  shard2_data:
+  shard3_data:
