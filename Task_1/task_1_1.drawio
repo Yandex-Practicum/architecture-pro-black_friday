@@ -1,0 +1,56 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36" version="29.4.0">
+  <diagram name="Sharding+Replication+Cache" id="ZB8p8CtG53JReoPCmRCc">
+    <mxGraphModel dx="1351" dy="-415" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-42" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=18;fontStyle=1;" value="Шардирование (2 шарда)" vertex="1">
+          <mxGeometry height="30" width="300" x="40.0042857142858" y="1215.9985714285715" as="geometry" />
+        </mxCell>
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-43" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="pymongo-api" vertex="1">
+          <mxGeometry height="90" width="260" x="40.0042857142858" y="1415.9985714285715" as="geometry" />
+        </mxCell>
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-44" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="mongos (роутер)" vertex="1">
+          <mxGeometry height="90" width="260" x="492.7142857142858" y="1415.9985714285715" as="geometry" />
+        </mxCell>
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-45" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="configSrv" vertex="1">
+          <mxGeometry height="70" width="280" x="482.7142857142857" y="1269.9985714285715" as="geometry" />
+        </mxCell>
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-46" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="шард - 1 (mongod:27018)" vertex="1">
+          <mxGeometry height="80" width="200" x="590" y="1673.57" as="geometry" />
+        </mxCell>
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-47" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="шард - 2 (mongod:27019)" vertex="1">
+          <mxGeometry height="80" width="210" x="250" y="1673.57" as="geometry" />
+        </mxCell>
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-48" edge="1" parent="1" source="jg1pmQjhx4P1vlKNmOX2-43" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;strokeWidth=2;strokeColor=#6c8ebf;labelBackgroundColor=#ffffff;" target="jg1pmQjhx4P1vlKNmOX2-44" value="Mongo queries">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-49" edge="1" parent="1" source="jg1pmQjhx4P1vlKNmOX2-44" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;strokeWidth=2;strokeColor=#d79b00;dashed=1;labelBackgroundColor=#ffffff;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="jg1pmQjhx4P1vlKNmOX2-45" value="Cluster metadata">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="623" y="1357" />
+              <mxPoint x="623" y="1357" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-50" edge="1" parent="1" source="jg1pmQjhx4P1vlKNmOX2-44" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="jg1pmQjhx4P1vlKNmOX2-46" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="623" y="1584" />
+              <mxPoint x="690" y="1584" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jg1pmQjhx4P1vlKNmOX2-51" edge="1" parent="1" source="jg1pmQjhx4P1vlKNmOX2-44" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="623" y="1581.57" />
+              <mxPoint x="360" y="1581.57" />
+            </Array>
+            <mxPoint x="360" y="1673.57" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
