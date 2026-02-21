@@ -1,10 +1,10 @@
+name: mongo-sharding
 services:
   mongodb1:
     container_name: mongodb1
     image: dh-mirror.gitverse.ru/mongo:latest
     volumes:
       - mongodb1_data_container:/data/db
-
   pymongo_api:
     container_name: pymongo_api
     build: 
@@ -17,7 +17,5 @@ services:
     environment:
       MONGODB_URL: "mongodb://mongodb1"
       MONGODB_DATABASE_NAME: "somedb"
-
-
 volumes:
   mongodb1_data_container:
