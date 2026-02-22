@@ -19,6 +19,11 @@ services:
         "--port",
         "27017"
       ]
+    healthcheck:
+      test: echo 'db.adminCommand('ping').ok' | mongosh --quiet
+      interval: 5s
+      timeout: 3s
+      retries: 30
   shard1:
     image: mongo:latest
     container_name: shard1
@@ -39,8 +44,10 @@ services:
         "27018"
       ]
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      test: echo 'db.adminCommand('ping').ok' | mongosh localhost:27018/test --quiet
       interval: 5s
+      timeout: 3s
+      retries: 30
       start_period: 10s
     depends_on:
       - configSrv
@@ -64,8 +71,10 @@ services:
         "27019"
       ]
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      test: echo 'db.adminCommand('ping').ok' | mongosh localhost:27019/test --quiet
       interval: 5s
+      timeout: 3s
+      retries: 30
       start_period: 10s
   mongos_router:
     image: mongo:latest
@@ -85,8 +94,10 @@ services:
         "27020"
       ]
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      test: echo 'db.adminCommand('ping').ok' | mongosh localhost:27020/test --quiet
       interval: 5s
+      timeout: 3s
+      retries: 30
       start_period: 10s
   pymongo_api:
     container_name: pymongo_api
