@@ -16,29 +16,58 @@
          ```shell
          docker compose up -d
 
-         until docker exec configSrv mongosh --port 27017 --quiet --eval 'db.adminCommand("ping").ok' | grep -q 1; do sleep 1; done
-         until docker exec shard1   mongosh --port 27018 --quiet --eval 'db.adminCommand("ping").ok' | grep -q 1; do sleep 1; done
-         until docker exec shard2   mongosh --port 27019 --quiet --eval 'db.adminCommand("ping").ok' | grep -q 1; do sleep 1; done
+        wait_ping configSrv 27017
+        wait_ping shard1-1 27018
+        wait_ping shard1-2 27018
+        wait_ping shard1-3 27018
+        wait_ping shard2-1 27019
+        wait_ping shard2-2 27019
+        wait_ping shard2-3 27019
           ```
     2. Инициализация сервера конфигурации:
          ```shell
          docker exec configSrv mongosh --port 27017 --quiet --eval 'try { rs.status() } catch(e) { rs.initiate({_id:"config_server",configsvr:true,members:[{_id:0,host:"configSrv:27017"}]}) }'
        ```
-    3. Инициализация сервера шардов:
+    3. Инициализация двух шардов и трёх реплик для каждого шарда:
          ```shell
-         docker exec shard1 mongosh --port 27018 --quiet --eval 'try { rs.status() } catch(e) { rs.initiate({_id:"shard1",members:[{_id:0,host:"shard1:27018"}]}) }'
-         docker exec shard2 mongosh --port 27019 --quiet --eval 'try { rs.status() } catch(e) { rs.initiate({_id:"shard2",members:[{_id:0,host:"shard2:27019"}]}) }'
+        docker exec shard1-1 mongosh --port 27018 --quiet --eval '
+        try { rs.status() } catch(e) {
+        rs.initiate({
+        _id:"shard1",
+        members:[
+        {_id:0, host:"shard1-1:27018"},
+        {_id:1, host:"shard1-2:27018"},
+        {_id:2, host:"shard1-3:27018"}
+        ]
+        })
+        }
+        '
+
+        docker exec shard2-1 mongosh --port 27019 --quiet --eval '
+        try { rs.status() } catch(e) {
+        rs.initiate({
+        _id:"shard2",
+        members:[
+        {_id:0, host:"shard2-1:27019"},
+        {_id:1, host:"shard2-2:27019"},
+        {_id:2, host:"shard2-3:27019"}
+        ]
+        })
+        }
+        '
          ```
     4. Ожидание пока роутер станет `healthed`:
          ```shell
-         until docker exec mongos_router mongosh --port 27020 --quiet --eval 'db.adminCommand("ping").ok' | grep -q 1; do sleep 1; done
+         wait_ping mongos_router 27020
          ```
     5. Инициализация роутера:
          ```shell
-         docker exec mongos_router mongosh --port 27020 --quiet --eval 'sh.addShard("shard1/shard1:27018");'
-         docker exec mongos_router mongosh --port 27020 --quiet --eval 'sh.addShard("shard2/shard2:27019");'
-         docker exec mongos_router mongosh --port 27020 --quiet --eval 'sh.enableSharding("somedb");'
-         docker exec mongos_router mongosh --port 27020 --quiet --eval 'sh.shardCollection("somedb.helloDoc", { "name" : "hashed" });'
+         docker exec mongos_router mongosh --port 27020 --quiet --eval '
+        sh.addShard("shard1/shard1-1:27018,shard1-2:27018,shard1-3:27018");
+        sh.addShard("shard2/shard2-2:27019,shard2-2:27019,shard2-3:27019");
+        sh.enableSharding("somedb");
+        sh.shardCollection("somedb.helloDoc", { "name" : "hashed" });
+        '
          ```
     6. Наполнение тестовыми данными:
          ```shell
