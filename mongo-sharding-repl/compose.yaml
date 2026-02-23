@@ -21,14 +21,48 @@ services:
     image: mongo:latest
     container_name: shard1-1
     restart: always
-    ports:
-      - "27018:27018"
     networks:
       app-network:
     volumes:
-      - shard1-data:/data/db
+      - shard1-1-data:/data/db
     command:
-      [ "--shardsvr","--replSet","shard1-1","--bind_ip_all","--port","27018" ]
+      [ "--shardsvr","--replSet","shard1","--bind_ip_all","--port","27018" ]
+    healthcheck:
+      test: echo 'db.adminCommand('ping').ok' | mongosh localhost:27018/test --quiet
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    depends_on:
+      - configSrv
+  shard1-2:
+    image: mongo:latest
+    container_name: shard1-2
+    restart: always
+    networks:
+      app-network:
+    volumes:
+      - shard1-2-data:/data/db
+    command:
+      [ "--shardsvr","--replSet","shard1","--bind_ip_all","--port","27018" ]
+    healthcheck:
+      test: echo 'db.adminCommand('ping').ok' | mongosh localhost:27018/test --quiet
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    depends_on:
+      - configSrv
+  shard1-3:
+    image: mongo:latest
+    container_name: shard1-3
+    restart: always
+    networks:
+      app-network:
+    volumes:
+      - shard1-3-data:/data/db
+    command:
+      [ "--shardsvr","--replSet","shard1","--bind_ip_all","--port","27018" ]
     healthcheck:
       test: echo 'db.adminCommand('ping').ok' | mongosh localhost:27018/test --quiet
       interval: 5s
@@ -41,12 +75,42 @@ services:
     image: mongo:latest
     container_name: shard2-1
     restart: always
-    ports:
-      - "27019:27019"
     networks:
       app-network:
     volumes:
-      - shard2-data:/data/db
+      - shard2-1-data:/data/db
+    command:
+      [ "--shardsvr","--replSet","shard2","--bind_ip_all","--port","27019" ]
+    healthcheck:
+      test: echo 'db.adminCommand('ping').ok' | mongosh localhost:27019/test --quiet
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+  shard2-2:
+    image: mongo:latest
+    container_name: shard2-2
+    restart: always
+    networks:
+      app-network:
+    volumes:
+      - shard2-2-data:/data/db
+    command:
+      [ "--shardsvr","--replSet","shard2","--bind_ip_all","--port","27019" ]
+    healthcheck:
+      test: echo 'db.adminCommand('ping').ok' | mongosh localhost:27019/test --quiet
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+  shard2-3:
+    image: mongo:latest
+    container_name: shard2-3
+    restart: always
+    networks:
+      app-network:
+    volumes:
+      - shard2-3-data:/data/db
     command:
       [ "--shardsvr","--replSet","shard2","--bind_ip_all","--port","27019" ]
     healthcheck:
@@ -87,8 +151,12 @@ services:
       app-network:
 volumes:
   config-data:
-  shard1-data:
-  shard2-data:
+  shard1-1-data:
+  shard1-2-data:
+  shard1-3-data:
+  shard2-1-data:
+  shard2-2-data:
+  shard2-3-data:
 networks:
   app-network:
     driver: bridge
