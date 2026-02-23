@@ -82,7 +82,3 @@
       ```shell
       ./mongo-down.sh
       ```
-    * Остановка всех контейнеров:
-        ```shell
-       docker compose down
-       ```

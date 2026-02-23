@@ -147,8 +147,26 @@ services:
     environment:
       MONGODB_URL: "mongodb://mongos_router:27020"
       MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis:6379"
     networks:
       app-network:
+  redis:
+    image: "redis:latest"
+    container_name: redis
+    ports:
+      - "6379"
+    volumes:
+      - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    networks:
+      app-network:
+    healthcheck:
+      test: redis-cli --raw incr ping
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
 volumes:
   config-data:
   shard1-1-data:
@@ -157,6 +175,7 @@ volumes:
   shard2-1-data:
   shard2-2-data:
   shard2-3-data:
+  redis-data:
 networks:
   app-network:
     driver: bridge
