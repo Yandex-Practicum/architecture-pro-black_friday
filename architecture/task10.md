@@ -10,8 +10,8 @@
 
 Применение Cassandra имеет смысл для:
 
-1. Заказы. Заказы уместно хранить в Cassandra; консистентность на критичных операциях обеспечивается выбором CL (
-   например строгий кворум), а eventual допускается для отображения.
+1. Заказы. Заказы уместно хранить в Cassandra; консистентность на критичных операциях обеспечивается выбором CL
+   (например строгий кворум), а eventual допускается для отображения.
 2. Товары. Их допустимо хранить в Cassandra, но только при разделении информации о товаре и остатках товаров на складах,
    т.к. консистентность информации об остатках критически важна перед оформлением заказа. Остатки в Cassandra возможны,
    но требуются специальные паттерны (резервации, идемпотентность, возможно LWT точечно).
@@ -19,3 +19,123 @@
 4. Корзины. Корзины (особенно гостевые) уместны в Cassandra: на них высокая нагрузка, TTL, доступ по ключу;
    консистентность - на уровне read-your-writes.
 5. Сессии. Аналогично корзинам: высокая нагрузка, TTL; консистентность - на уровне read-your-writes.
+
+### Задание 10.2:
+
+1. Заказы. В качестве PK был выбран `id` из-за его выской кардинальности, которая обеспечит равнометное распределение по
+   виртуальным нодам. В данном случает также не будет горячих нод. Добавление нод не вызовет полного reshuffle.
+   Используется для:
+    1. Получения заказа по `id`.
+    2. Обновления статуса заказа.
+    3. Идемпотентной записи.
+
+   Модель данных:
+      ```sql
+      CREATE TABLE orders (
+       id UUID, /* UUID v4 */
+       user_id UUID,
+       created_at TIMESTAMP,
+       status TEXT,
+       total_amount DECIMAL,
+       geo_zone TEXT,
+
+       items LIST<FROZEN<tuple<
+           UUID,      /* product_id */
+           INT,       /* quantity */
+           DECIMAL    /* price */
+    >>>   ,
+       PRIMARY KEY (id)
+      );
+      ```
+
+2. История заказов. В качестве PK выбран `user_id+order_month` это позволит равномерно распределить историю заказов
+   одного пользователя, также он обеспечит контролируемый размер партиции и безопасную работу при 50000 prs.
+   Используется для:
+    1. Истории заказов пользователя.
+    2. Получения последних N заказов.
+    3. Пагинации.
+
+   Модель данных:
+   ```sql
+   CREATE TABLE order_history_by_user (
+    user_id UUID,
+    order_month TEXT,        /* YYYYMM bucket */
+    created_at TIMESTAMP,
+    order_id UUID,
+    status TEXT,
+    total_amount DECIMAL,
+   geo_zone TEXT,
+
+       items LIST<FROZEN<tuple<
+           UUID,      /* product_id */
+           INT,       /* quantity */
+           DECIMAL    /* price */
+    >>>   ,
+
+    PRIMARY KEY (
+        (user_id, order_month),
+        created_at,
+        order_id
+    )
+   )
+   WITH CLUSTERING ORDER BY (created_at DESC);
+   ```
+
+3. Остатки товаров. В качестве PK выбран `zone+product_id` они обеспечат высокую кардинальность данных и быстрый поиск
+   остатков товара для конкретной зоны.
+
+   Используется для ведения (получения и обновления) остатков конкретного товара в определённой зоне.
+
+   Модель данных:
+   ```sql
+   CREATE TABLE stocks(
+    zone: TEXT
+    product_id: UUID,
+    remaining: INT,
+    updated_at TIMESTAMP
+   )
+   ```
+
+4. Корзины. В качестве PK выбран `owner_id`, он имеет высокую кардинальность. Возникновение горячих партиций
+   маловероятно, т.к. один пользователь не создать огромный QPS.
+   Используется для:
+    1. Получить активную корзину.
+    2. Добавить/удалить товар.
+    3. Обновить количество.
+
+   Модель данных:
+   ```sql
+   CREATE TABLE carts (
+   owner_id TEXT,          /* user_id или session_id */
+   product_id UUID,
+   quantity INT,
+   added_at TIMESTAMP,
+   updated_at TIMESTAMP,
+
+   PRIMARY KEY ((owner_id), product_id)
+   );
+   ```
+
+5. Продукты. В качестве PK выбран `category+bucket`. `bucket` - целое число, которе необходимо для того, чтобы разбить
+   горячую партицию электроники на N партиций. Бакет рассчитывается по формуле: `bucket = hash(product_id) % N`. N
+   подбираем по ожидаемой нагрузке: 16/32/64.
+
+   Модель данных:
+   ```sql
+   CREATE TABLE products_by_category_price (
+   category TEXT,
+   bucket SMALLINT, /* 0..N-1, например N=32 или 64 */
+   price DECIMAL,
+   product_id UUID,
+   title TEXT,
+
+   PRIMARY KEY (
+        (category, bucket),
+        price,
+        product_id
+    )
+   )
+   WITH CLUSTERING ORDER BY (price ASC);
+   ```
+
+### Задание 10.3:
