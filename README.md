@@ -38,7 +38,7 @@
         *   Стратегии устранения "горячих" шардов.
         *   Настройка Consistency Level и Read Preference.
         *   Модель данных Cassandra для миграции корзины.
-    *   **[Открыть документ](./docs/architecture_design.md)**
+    *   **[Открыть документ](./architecture_design/Readme.md)**
 
 ---
 
