@@ -24,7 +24,7 @@
 
 *   **[Задание 5: Балансировка и Service Discovery](./architecture_design/diagrams/task_5.drawio)**
     *   *Решение:* API Gateway + Hashicorp Consul для динамического обнаружения сервисов.
-    *   **[Схема архитектуры](./architecture_desing/diagrams/task_5.png)**
+    *   **[Схема архитектуры](./architecture_design/diagrams/task_5.png)**
 
 *   **[Задание 6: CDN и Геораспределение](./architecture_design/diagrams/task_6(2).drawio)**
     *   *Решение:* Использование CDN для статики и разделение трафика по регионам.
