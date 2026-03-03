@@ -8,17 +8,14 @@
 
 *   **[Задание 2: Шардирование](./mongo-sharding/)**
     *   *Цель:* Реализация базового шардирования MongoDB.
-    *   *Технологии:* Docker Compose, MongoDB (mongos, config server, shards).
     *   **[Инструкция по запуску](./mongo-sharding/README.md)**
 
 *   **[Задание 3: Репликация](./mongo-sharding-repl/)**
     *   *Цель:* Добавление отказоустойчивости (High Availability).
-    *   *Технологии:* MongoDB Replica Set для каждого шарда и конфига.
     *   **[Инструкция по запуску](./mongo-sharding-repl/README.md)**
 
 *   **[Задание 4: Кеширование (ИТОГОВОЕ РЕШЕНИЕ)](./sharding-repl-cache/)**
     *   *Цель:* Ускорение чтения с помощью Redis.
-    *   *Технологии:* Redis, Cache-Aside паттерн.
     *   **[Инструкция по запуску финального стенда](./sharding-repl-cache/README.md)**
 
 ## Часть 2: Масштабирование приложения и CDN (Схемы)
@@ -34,8 +31,6 @@
     *   **[Схема CDN](./architecture_desing/diagrams/task6.png)**
 
 ## Часть 3: Архитектура данных (Документация)
-
-Глубокая проработка моделей данных, выбор ключей шардирования и стратегии миграции на NoSQL (Cassandra).
 
 *   **[Архитектурное решение: Шардирование и Cassandra (Задания 7-10)](./docs/architecture_design.md)**
     *   *Содержание:*
