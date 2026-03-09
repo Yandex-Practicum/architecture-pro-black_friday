@@ -1,0 +1,129 @@
+name: sharding-repl-cache
+
+services:
+  # Конфигурационный сервер
+  configSrv:
+    image: mongo:latest
+    container_name: configSrv
+    command: mongod --configsvr --replSet configSrv --port 27019 --bind_ip_all
+    volumes:
+      - configSrv_data:/data/db
+    networks:
+      - sharding-net
+
+  # Шард 1 - реплика-сет rs1 (3 узла)
+  shard11:
+    image: mongo:latest
+    container_name: shard11
+    command: mongod --shardsvr --replSet rs1 --port 27018 --bind_ip_all
+    volumes:
+      - shard11_data:/data/db
+    networks:
+      - sharding-net
+
+  shard12:
+    image: mongo:latest
+    container_name: shard12
+    command: mongod --shardsvr --replSet rs1 --port 27018 --bind_ip_all
+    volumes:
+      - shard12_data:/data/db
+    networks:
+      - sharding-net
+
+  shard13:
+    image: mongo:latest
+    container_name: shard13
+    command: mongod --shardsvr --replSet rs1 --port 27018 --bind_ip_all
+    volumes:
+      - shard13_data:/data/db
+    networks:
+      - sharding-net
+
+  # Шард 2 - реплика-сет rs2 (3 узла)
+  shard21:
+    image: mongo:latest
+    container_name: shard21
+    command: mongod --shardsvr --replSet rs2 --port 27018 --bind_ip_all
+    volumes:
+      - shard21_data:/data/db
+    networks:
+      - sharding-net
+
+  shard22:
+    image: mongo:latest
+    container_name: shard22
+    command: mongod --shardsvr --replSet rs2 --port 27018 --bind_ip_all
+    volumes:
+      - shard22_data:/data/db
+    networks:
+      - sharding-net
+
+  shard23:
+    image: mongo:latest
+    container_name: shard23
+    command: mongod --shardsvr --replSet rs2 --port 27018 --bind_ip_all
+    volumes:
+      - shard23_data:/data/db
+    networks:
+      - sharding-net
+
+  # Роутер mongos
+  mongos:
+    image: mongo:latest
+    container_name: mongos
+    depends_on:
+      - configSrv
+      - shard11
+      - shard12
+      - shard13
+      - shard21
+      - shard22
+      - shard23
+    command: mongos --configdb configSrv/configSrv:27019 --bind_ip_all --port 27017
+    ports:
+      - "27017:27017"
+    networks:
+      - sharding-net
+
+  # Redis для кеширования
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - sharding-net
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  # Приложение с поддержкой кеширования
+  pymongo-api:
+    build: ./api_app
+    container_name: pymongo-api
+    depends_on:
+      - mongos
+      - redis
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis:6379"
+      REDIS_TTL: "60"  # Время жизни кеша в секундах
+    networks:
+      - sharding-net
+
+volumes:
+  configSrv_data:
+  shard11_data:
+  shard12_data:
+  shard13_data:
+  shard21_data:
+  shard22_data:
+  shard23_data:
+  redis_data:
+
+networks:
+  sharding-net:
+    driver: bridge
