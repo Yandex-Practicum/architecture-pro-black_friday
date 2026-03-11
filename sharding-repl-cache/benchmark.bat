@@ -14,8 +14,8 @@ set /p status=<temp.txt
 del temp.txt
 
 if not "%status%"=="200" (
-    echo [ERROR] Приложение недоступно (HTTP %status^)
-    echo Запустите сначала setup-cache.bat
+    echo [ERROR] Приложение недоступно (HTTP %status%^)
+    echo Запустите сначала приложение
     pause
     exit /b 1
 )
@@ -44,21 +44,29 @@ echo 3. Серия запросов с измерением времени:
 echo ----------------------------------------
 echo.
 
-set total_time=0
+set total_time_ms=0
 set requests=5
 
 for /l %%i in (1,1,%requests%) do (
     echo Запрос %%i:
     
     REM Выполняем запрос и сохраняем время
-    for /f "tokens=*" %%t in ('curl -s -w "%%{time_total}" -o nul http://localhost:8080/helloDoc/users') do set time=%%t
+    for /f "usebackq delims=" %%t in (`curl -s -w "%%{time_total}" -o nul http://localhost:8080/helloDoc/users`) do set time=%%t
     
     REM Выводим время
     echo   Время: !time! сек
     
-    REM Добавляем к общему времени (конвертируем в число для сложения)
+    REM Разбиваем на секунды и миллисекунды
     for /f "tokens=1,2 delims=." %%a in ("!time!") do (
-        set /a time_ms=%%a*1000 + %%b
+        set sec=%%a
+        set ms=%%b
+        if "!ms!"=="" set ms=0
+        REM Убираем ведущие нули
+        for /f "tokens=* delims=0" %%x in ("!ms!") do set ms=%%x
+        if "!ms!"=="" set ms=0
+        
+        REM Вычисляем миллисекунды
+        set /a time_ms=!sec!*1000 + !ms!
         set /a total_time_ms=!total_time_ms! + !time_ms!
     )
     
@@ -69,6 +77,10 @@ REM Вычисляем среднее
 set /a avg_time_ms=%total_time_ms%/%requests%
 set /a avg_sec=%avg_time_ms%/1000
 set /a avg_ms=%avg_time_ms% %% 1000
+
+REM Добавляем ведущие нули к миллисекундам
+if %avg_ms% lss 100 set avg_ms=0%avg_ms%
+if %avg_ms% lss 10 set avg_ms=0%avg_ms%
 
 echo ----------------------------------------
 echo Среднее время: %avg_sec%.%avg_ms% сек
@@ -90,7 +102,7 @@ echo.
 
 echo 6. Ключи в Redis:
 echo ----------------------------------------
-docker compose exec redis redis-cli --scan --pattern "users:*" || echo Ключи не найдены
+docker compose exec redis redis-cli --scan --pattern "*" || echo Ключи с "user" не найдены
 echo.
 
 echo ========================================
