@@ -1,0 +1,113 @@
+name: mongo-sharding-repl
+
+services:
+  # === CONFIG SERVER ===
+  configSrv:
+    image: mongo:latest
+    container_name: configSrv
+    restart: always
+    ports:
+      - "27019:27019"
+    command: mongod --configsvr --port 27019 --replSet configRS --bind_ip_all
+    volumes:
+      - config_data:/data/db
+
+  # === SHARD 1 - Replica Set (3 nodes) ===
+  shard1-1:
+    image: mongo:latest
+    container_name: shard1-1
+    restart: always
+    ports:
+      - "27018:27018"
+    command: mongod --shardsvr --port 27018 --replSet shard1RS --bind_ip_all
+    volumes:
+      - shard1_1_data:/data/db
+
+  shard1-2:
+    image: mongo:latest
+    container_name: shard1-2
+    restart: always
+    ports:
+      - "27021:27018"
+    command: mongod --shardsvr --port 27018 --replSet shard1RS --bind_ip_all
+    volumes:
+      - shard1_2_data:/data/db
+
+  shard1-3:
+    image: mongo:latest
+    container_name: shard1-3
+    restart: always
+    ports:
+      - "27022:27018"
+    command: mongod --shardsvr --port 27018 --replSet shard1RS --bind_ip_all
+    volumes:
+      - shard1_3_data:/data/db
+
+  # === SHARD 2 - Replica Set (3 nodes) ===
+  shard2-1:
+    image: mongo:latest
+    container_name: shard2-1
+    restart: always
+    ports:
+      - "27020:27018"
+    command: mongod --shardsvr --port 27018 --replSet shard2RS --bind_ip_all
+    volumes:
+      - shard2_1_data:/data/db
+
+  shard2-2:
+    image: mongo:latest
+    container_name: shard2-2
+    restart: always
+    ports:
+      - "27024:27018"
+    command: mongod --shardsvr --port 27018 --replSet shard2RS --bind_ip_all
+    volumes:
+      - shard2_2_data:/data/db
+
+  shard2-3:
+    image: mongo:latest
+    container_name: shard2-3
+    restart: always
+    ports:
+      - "27025:27018"
+    command: mongod --shardsvr --port 27018 --replSet shard2RS --bind_ip_all
+    volumes:
+      - shard2_3_data:/data/db
+
+  # === MONGOS (Query Router) ===
+  mongos:
+    image: mongo:latest
+    container_name: mongos
+    restart: always
+    ports:
+      - "27017:27017"
+    command: mongos --configdb configRS/configSrv:27019 --bind_ip_all --port 27017
+    depends_on:
+      - configSrv
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+
+  # === APPLICATION ===
+  pymongo_api:
+    image: kazhem/pymongo_api:1.0.0
+    container_name: pymongo_api
+    depends_on:
+      - mongos
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+
+volumes:
+  config_data:
+  shard1_1_data:
+  shard1_2_data:
+  shard1_3_data:
+  shard2_1_data:
+  shard2_2_data:
+  shard2_3_data:
