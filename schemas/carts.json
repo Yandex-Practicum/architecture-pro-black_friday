@@ -1,0 +1,38 @@
+{
+    "title": "orders",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "uuid"
+        },
+        "userId": {
+            "type": "uuid"
+        },
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "uuid"
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "status": {
+            "type": "string"
+        },
+        "createdAt": {
+            "type": "datetime"
+        },
+        "updatedAt": {
+            "type": "datetime"
+        },
+        "expiresAt": {
+            "type": "datetime"
+        }
+    }
+}

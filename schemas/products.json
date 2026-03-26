@@ -1,0 +1,52 @@
+{
+    "title": "products + products_remains",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "uuid"
+        },
+        "name": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "category": {
+            "type": "string"
+        },
+        "price": {
+            "type": "numeric"
+        },
+        "remains": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "uuid"
+                    },
+                    "geo": {
+                        "type": "string"
+                    },
+                    "count": {
+                        "type": "numeric"
+                    }
+                }
+            }
+        },
+        "additionalParams": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
