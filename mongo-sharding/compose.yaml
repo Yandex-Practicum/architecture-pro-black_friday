@@ -1,0 +1,101 @@
+services:
+  monogdb-config:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: monogdb-config
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-config_data_container:/data/db
+    command:
+      [
+        "--configsvr",
+        "--replSet",
+        "config_server",
+        "--bind_ip_all",
+        "--port",
+        "27017"
+      ] 
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+      
+  mongodb-shard-1:
+    container_name: mongodb-shard-1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    volumes:
+      - mongodb-shard-1_data_container:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard1",
+        "--bind_ip_all",
+        "--port",
+        "27018"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  mongodb-shard-2:
+    container_name: mongodb-shard-2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    volumes:
+      - mongodb-shard-2_data_container:/data/db
+    command:
+      [
+        "--shardsvr", 
+        "--replSet",
+        "shard2",
+        "--bind_ip_all",
+        "--port",
+        "27019"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  mongodb-router:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: mongodb-router
+    restart: always
+    ports:
+      - "27020:27020"
+    command:
+      [
+        "mongos",
+        "--configdb", 
+        "config_server/monogdb-config:27017",
+        "--bind_ip_all",
+        "--port",
+        "27020"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
+  pymongo_api:
+    container_name: pymongo_api
+    build: 
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongodb-router
+      - mongodb-shard-1
+      - mongodb-shard-2
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://mongodb-router:27020"
+      MONGODB_DATABASE_NAME: "somedb"
+
+
+volumes:
+  mongodb-config_data_container:
+  mongodb-shard-1_data_container:
+  mongodb-shard-2_data_container:
