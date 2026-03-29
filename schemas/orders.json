@@ -1,0 +1,38 @@
+{
+    "title": "orders",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "uuid"
+        },
+        "clientId": {
+            "type": "uuid"
+        },
+        "createdAt": {
+            "type": "datetime"
+        },
+        "products": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "uuid"
+                    },
+                    "price": {
+                        "type": "numeric"
+                    }
+                }
+            }
+        },
+        "totalPrice": {
+            "type": "numeric"
+        },
+        "status": {
+            "type": "string"
+        },
+        "geo": {
+            "type": "string"
+        }
+    }
+}
