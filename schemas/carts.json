@@ -1,5 +1,5 @@
 {
-    "title": "orders",
+    "title": "carts",
     "type": "object",
     "properties": {
         "id": {

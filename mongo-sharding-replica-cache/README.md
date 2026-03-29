@@ -13,16 +13,15 @@ docker compose up -d
 ```shell
 docker exec -it configSrv mongosh --port 27017
 
-> rs.initiate(
-  {
-    _id : "config_server",
-       configsvr: true,
-    members: [
-      { _id : 0, host : "configSrv:27017" }
-    ]
-  }
-);
-> exit();
+rs.initiate({
+  _id: "config_server",
+  configsvr: true,
+  members: [
+    { _id: 0, host: "configSrv1:27017" },
+    { _id: 1, host: "configSrv2:27017" },
+    { _id: 2, host: "configSrv3:27017" }
+  ]
+});
 ```
 
 Инициализируйте шарды:
@@ -30,29 +29,25 @@ docker exec -it configSrv mongosh --port 27017
 ```shell
 docker exec -it shard1 mongosh --port 27018
 
-> rs.initiate(
-    {
-      _id : "shard1",
-      members: [
-        { _id : 0, host : "shard1:27018" },
-       // { _id : 1, host : "shard2:27019" }
-      ]
-    }
-);
-> exit();
+rs.initiate({
+  _id: "shard1",
+  members: [
+    { _id: 0, host: "shard1_primary:27018" },
+    { _id: 1, host: "shard1_secondary1:27018" },
+    { _id: 2, host: "shard1_secondary2:27018" }
+  ]
+});
 
 docker exec -it shard2 mongosh --port 27019
 
-> rs.initiate(
-    {
-      _id : "shard2",
-      members: [
-       // { _id : 0, host : "shard1:27018" },
-        { _id : 1, host : "shard2:27019" }
-      ]
-    }
-  );
-> exit();
+rs.initiate({
+  _id: "shard2",
+  members: [
+    { _id: 0, host: "shard2_primary:27019" },
+    { _id: 1, host: "shard2_secondary1:27019" },
+    { _id: 2, host: "shard2_secondary2:27019" }
+  ]
+});
 ```
 
 Инцициализируйте роутер и наполните его тестовыми данными:
@@ -80,8 +75,23 @@ docker exec -it redis_1
 echo "yes" | redis-cli --cluster create   173.17.0.2:6379   173.17.0.3:6379   173.17.0.4:6379   173.17.0.5:6379   173.17.0.6:6379   173.17.0.11:6379   --cluster-replicas 1
 ```
 
-
 ## Как проверить
+Количество документов на каждом шарде
+```shell
+db.helloDoc.getShardDistribution()
+```
+
+Замер времени первого запроса к helloDoc коллекции
+
+```shell
+time curl -X GET "http://localhost:8080/helloDoc/users"
+```
+
+Повторный запрос (данные из кэша Redis)
+```shell
+time curl -X GET "http://localhost:8080/helloDoc/users"
+```
+
 
 ### Если вы запускаете проект на локальной машине
 

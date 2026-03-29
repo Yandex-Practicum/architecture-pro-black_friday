@@ -75,6 +75,10 @@ docker exec -it mongos_router mongosh --port 27020
 ```
 
 ## Как проверить
+Количество документов на каждом шарде
+```shell
+db.helloDoc.getShardDistribution()
+```
 
 ### Если вы запускаете проект на локальной машине
 
