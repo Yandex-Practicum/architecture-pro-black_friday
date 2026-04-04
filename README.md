@@ -33,3 +33,27 @@ curl --silent http://ifconfig.me
 ## Доступные эндпоинты
 
 Список доступных эндпоинтов, swagger http://<ip виртуальной машины>:8080/docs
+
+
+## Запуск
+
+Задание №1 - из каталога `mongo-sharding`:
+
+```shell
+docker compose build
+./scripts/init-cluster.sh
+```
+
+Задание №2 - из каталога `mongo-sharding-repl`:
+
+```shell
+docker compose build
+./scripts/init-cluster.sh
+```
+
+Задание №3 - из каталога `sharding-repl-cache`:
+
+```shell
+docker compose build
+./scripts/init-cluster.sh
+```

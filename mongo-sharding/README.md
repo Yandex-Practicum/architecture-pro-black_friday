@@ -1,0 +1,18 @@
+# mongo-sharding
+
+Шардированный MongoDB (схема с **mongos**, **config server replica set**, двумя шардами по одному узлу) и приложение **pymongo-api**, подключающееся к **mongos**.
+
+База: `somedb`, коллекция: `helloDoc`.
+
+## Запуск
+
+Из каталога `mongo-sharding`:
+
+```shell
+docker compose build
+./scripts/init-cluster.sh
+```
+
+Скрипт поднимает сервисы в нужном порядке, инициализирует replica set на config-сервере и на обоих шардах, затем запускает **mongos** и API, регистрирует шарды, включает шардирование коллекции и вставляет не менее 1000 документов.
+
+Проверка приложения: в браузере или `curl http://localhost:8080/` — в ответе должны быть общее число документов в `helloDoc`, список шардов и при шардированной коллекции поле `documents_per_shard` внутри `collections.helloDoc`.
