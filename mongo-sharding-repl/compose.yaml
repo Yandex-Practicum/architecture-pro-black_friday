@@ -1,0 +1,106 @@
+name: mongo-sharding-repl
+
+services:
+  mongo-config1:
+    container_name: mongo-sharding-repl-config1
+    image: mongo:7
+    command:
+      [
+        "mongod",
+        "--configsvr",
+        "--replSet",
+        "configRS",
+        "--bind_ip_all",
+        "--port",
+        "27017",
+      ]
+    volumes:
+      - mongo_config1_data:/data/db
+
+  # Шард 1: replica set из 3 узлов (primary + 2 secondary)
+  shard1-1:
+    container_name: mongo-sharding-repl-shard1-1
+    image: mongo:7
+    command:
+      ["mongod", "--shardsvr", "--replSet", "shard1", "--bind_ip_all", "--port", "27017"]
+    volumes:
+      - shard1_1_data:/data/db
+
+  shard1-2:
+    container_name: mongo-sharding-repl-shard1-2
+    image: mongo:7
+    command:
+      ["mongod", "--shardsvr", "--replSet", "shard1", "--bind_ip_all", "--port", "27017"]
+    volumes:
+      - shard1_2_data:/data/db
+
+  shard1-3:
+    container_name: mongo-sharding-repl-shard1-3
+    image: mongo:7
+    command:
+      ["mongod", "--shardsvr", "--replSet", "shard1", "--bind_ip_all", "--port", "27017"]
+    volumes:
+      - shard1_3_data:/data/db
+
+  # Шард 2: replica set из 3 узлов
+  shard2-1:
+    container_name: mongo-sharding-repl-shard2-1
+    image: mongo:7
+    command:
+      ["mongod", "--shardsvr", "--replSet", "shard2", "--bind_ip_all", "--port", "27017"]
+    volumes:
+      - shard2_1_data:/data/db
+
+  shard2-2:
+    container_name: mongo-sharding-repl-shard2-2
+    image: mongo:7
+    command:
+      ["mongod", "--shardsvr", "--replSet", "shard2", "--bind_ip_all", "--port", "27017"]
+    volumes:
+      - shard2_2_data:/data/db
+
+  shard2-3:
+    container_name: mongo-sharding-repl-shard2-3
+    image: mongo:7
+    command:
+      ["mongod", "--shardsvr", "--replSet", "shard2", "--bind_ip_all", "--port", "27017"]
+    volumes:
+      - shard2_3_data:/data/db
+
+  mongos:
+    container_name: mongo-sharding-repl-mongos
+    image: mongo:7
+    command:
+      ["mongos", "--configdb", "configRS/mongo-config1:27017", "--bind_ip_all", "--port", "27017"]
+    depends_on:
+      - mongo-config1
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+    ports:
+      - "27017:27017"
+
+  pymongo_api:
+    container_name: mongo-sharding-repl-api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+
+volumes:
+  mongo_config1_data:
+  shard1_1_data:
+  shard1_2_data:
+  shard1_3_data:
+  shard2_1_data:
+  shard2_2_data:
+  shard2_3_data:

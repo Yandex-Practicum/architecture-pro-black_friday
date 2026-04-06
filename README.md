@@ -33,3 +33,31 @@ curl --silent http://ifconfig.me
 ## Доступные эндпоинты
 
 Список доступных эндпоинтов, swagger http://<ip виртуальной машины>:8080/docs
+
+
+
+Задание №1 - из каталога `mongo-sharding`:
+
+```shell
+cd mongo-sharding
+docker compose build
+./scripts/init-cluster.sh
+```
+
+Задание №2 - из каталога `mongo-sharding-repl`:
+
+```shell
+cd mongo-sharding-repl
+docker compose build
+./scripts/init-cluster.sh
+```
+
+Задание №3 - из каталога `sharding-repl-cache`:
+
+```shell
+cd sharding-repl-cache
+docker compose build
+./scripts/init-cluster.sh
+```
+
+Если скрипт долго пишет «Ожидание shard1…», чаще всего в фоне **докачивается образ `mongo:7`** или MongoDB ещё не принял соединения — подождите до таймаута (~3 мин) или посмотрите логи: `docker compose logs -f shard1` (из того же каталога проекта).
