@@ -1,7 +1,3 @@
-## Проектная работа architecture-pro-black_friday
-
-Необходимо реализовать шардирование, репликацию и кеширование
-
 # pymongo-api
 
 ## Как запустить
@@ -43,7 +39,7 @@ cd путь-к-проекту\mongo-sharding-repl-cache\scripts
 
 Результат будет похож на:
 
-![MongoDb + Redis кеш](mongo-sharding-repl-cache/img.png)
+![MongoDb + Redis кеш](img.png)
 
 ### проверка репликации
 
@@ -58,7 +54,7 @@ cd путь-к-проекту\mongo-sharding-repl-cache\scripts
 
 Результат будет похож на:
 
-![img_2.png](mongo-sharding-repl-cache/img_2.png)
+![img_2.png](img_2.png)
 
 
 ### Если вы запускаете проект на локальной машине
@@ -77,7 +73,7 @@ curl --silent http://ifconfig.me
 
 Результат будет похож на:
 
-![Информация](mongo-sharding-repl-cache/img_1.png)
+![Информация](img_1.png)
 
 ## Доступные эндпоинты
 
@@ -91,15 +87,15 @@ http://localhost:8080/helloDoc/users
 
 Первоначальный запрос:
 
-![img_3.png](mongo-sharding-repl-cache/img_3.png)
+![img_3.png](../mongo-sharding-repl-cache/img_3.png)
 
 Второй запрос:
 
-![img_4.png](mongo-sharding-repl-cache/img_4.png)
+![img_4.png](../mongo-sharding-repl-cache/img_4.png)
 
 
 P.S.:
 В задании сказано использовать docker-образ приложения kazhem/pymongo_api:1.0.0,
-но если в docker-compose не использовать этот image (закомментировать image и раскомментировать другую часть с build),
+но если в docker-compose не использовать этот image (закомментировать image и раскомментировать другую часть с build), 
 а собирать, то будет использоваться версия приложения,
 адаптированная мной под использование именно кластера Redis
