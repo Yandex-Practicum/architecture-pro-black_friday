@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="scheme-4" name="Вариант 4 — API Gateway, Consul, масштабирование">
-        <mxGraphModel dx="792" dy="785" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+        <mxGraphModel dx="594" dy="589" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -75,7 +75,8 @@
                 <mxCell id="a1c" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.65;entryDx=0;entryDy=0;dashed=1;dashPattern=1 2" parent="1" source="app1" target="consul" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="980" y="275"/>
+                            <mxPoint x="430" y="230"/>
+                            <mxPoint x="920" y="230"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -92,10 +93,10 @@
                         <mxPoint y="4" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="a3c" value="" style="endArrow=classic;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.3;entryY=1;entryDx=0;entryDy=0;dashed=1;dashPattern=1 2" parent="1" source="app3" target="consul" edge="1">
+                <mxCell id="a3c" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.3;entryY=1;entryDx=0;entryDy=0;dashed=1;dashPattern=1 2" parent="1" source="app3" target="consul" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="980" y="300"/>
+                            <mxPoint x="1056" y="275"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
