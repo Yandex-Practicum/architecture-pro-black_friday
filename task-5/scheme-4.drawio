@@ -1,0 +1,192 @@
+<mxfile host="65bd71144e">
+    <diagram id="scheme-4" name="Вариант 4 — API Gateway, Consul, масштабирование">
+        <mxGraphModel dx="594" dy="589" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="Вариант 4: балансировка + Service Discovery (Consul) + существующий стек" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="200" width="800" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="clients" value="Клиенты" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b8c4ce;strokeColor=#4a4a4a;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="40" width="160" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="egw" value="" style="endArrow=classic;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="clients" target="gw" edge="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="400" y="200" as="sourcePoint"/>
+                        <mxPoint x="450" y="150" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="elgw" value="HTTP(S)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="egw" connectable="0" vertex="1">
+                    <mxGeometry x="-0.1" y="1" relative="1" as="geometry">
+                        <mxPoint y="-2" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="gw" value="API Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e65100;fontColor=#ffffff;strokeColor=#bf360c;fontSize=12;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="480" y="120" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="app1" value="pymongo-app-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="250" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="app2" value="pymongo-app-2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="250" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="app3" value="pymongo-app-3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="250" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" value="" style="endArrow=classic;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" parent="1" source="gw" target="app1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1l" value="балансировка" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="e1" connectable="0" vertex="1">
+                    <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+                        <mxPoint x="-8" y="-4" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e2" value="" style="endArrow=classic;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="gw" target="app2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2l" value="балансировка" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="e2" connectable="0" vertex="1">
+                    <mxGeometry y="1" relative="1" as="geometry">
+                        <mxPoint y="-4" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e3" value="" style="endArrow=classic;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.75;exitY=1;exitDx=0;exitDy=0;" parent="1" source="gw" target="app3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3l" value="балансировка" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="e3" connectable="0" vertex="1">
+                    <mxGeometry x="0.1" y="1" relative="1" as="geometry">
+                        <mxPoint y="-4" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="consul" value="HashiCorp&#10;Consul&#10;(Service Discovery)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5c2d91;fontColor=#ffffff;strokeColor=#3d1f62;fontSize=11;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="1020" y="120" width="120" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="gc" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.35;entryDx=0;entryDy=0;dashed=1" parent="1" source="gw" target="consul" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="990" y="145"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="gcl" value="resolve upstream / health" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" parent="gc" connectable="0" vertex="1">
+                    <mxGeometry y="1" relative="1" as="geometry">
+                        <mxPoint x="-4" y="-2" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a1c" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.65;entryDx=0;entryDy=0;dashed=1;dashPattern=1 2" parent="1" source="app1" target="consul" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="430" y="230"/>
+                            <mxPoint x="920" y="230"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a1cl" value="регистрация" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" parent="a1c" connectable="0" vertex="1">
+                    <mxGeometry y="1" relative="1" as="geometry">
+                        <mxPoint x="-2" y="-2" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a2c" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;dashPattern=1 2" parent="1" source="app2" target="consul" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a2cl" value="регистрация" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" parent="a2c" connectable="0" vertex="1">
+                    <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+                        <mxPoint y="4" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a3c" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.3;entryY=1;entryDx=0;entryDy=0;dashed=1;dashPattern=1 2" parent="1" source="app3" target="consul" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1056" y="275"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a3cl" value="регистрация" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" parent="a3c" connectable="0" vertex="1">
+                    <mxGeometry y="1" relative="1" as="geometry">
+                        <mxPoint y="-2" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="dataLayer" value="Слой данных (как в вар.3): маршрутизатор, шарды+репликация, config, Redis" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#1b5e20;fontStyle=2" parent="1" vertex="1">
+                    <mxGeometry x="80" y="380" width="1040" height="400" as="geometry"/>
+                </mxCell>
+                <mxCell id="mongos" value="mongos" style="rhombus;whiteSpace=wrap;html=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="520" width="100" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="config" value="configSrv" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0a30a;fontColor=#000000;strokeColor=#BD7000;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="400" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="ec" value="метаданные" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0" parent="1" source="config" target="mongos" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ec2src" value="shard1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="500" width="100" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="ec2src2" value="shard2" style="ellipse;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="500" width="100" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="ec2a" value="регистрация" style="endArrow=classic;html=1;startArrow=classic;startFill=1;endFill=1;" parent="1" source="ec2src" target="config" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ec2b" value="регистрация" style="endArrow=classic;html=1;startArrow=classic;startFill=1;endFill=1;" parent="1" source="ec2src2" target="config" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="700" y="456"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="eappm1" value="запросы (Mongo)" style="endArrow=classic;html=1;entryX=0;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0" parent="1" source="app1" target="mongos" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="260" y="620"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="eappm2" value="запросы (Mongo)" style="endArrow=classic;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0" parent="1" source="app2" target="mongos" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="eappm3" value="запросы (Mongo)" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=1;entryDx=0;entryDy=0;" parent="1" source="app3" target="mongos" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="920" y="630"/>
+                        </Array>
+                        <mxPoint x="570" y="620" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ed1" value="Данные" style="endArrow=classic;html=1" parent="1" source="mongos" target="ec2src" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ed2" value="Данные" style="endArrow=classic;html=1" parent="1" source="mongos" target="ec2src2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="redis" value="Redis&#10;(кеш)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#a20025;strokeColor=#6F0000;fontColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="500" width="60" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="er" value="кеш" style="endArrow=classic;html=1;startArrow=classic;startFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;endFill=1" parent="1" source="app1" target="redis" edge="1">
+                    <mxGeometry x="-0.1" y="-1" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="170" y="280"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="er2" value="кеш" style="endArrow=classic;html=1;startArrow=classic;startFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0" parent="1" source="app2" target="redis" edge="1">
+                    <mxGeometry x="-0.1" y="-1" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="580" y="330"/>
+                            <mxPoint x="170" y="330"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="er3" value="кеш" style="endArrow=classic;html=1;startArrow=classic;startFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0" parent="1" source="app3" target="redis" edge="1">
+                    <mxGeometry x="-0.1" y="-1" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="920" y="350"/>
+                            <mxPoint x="170" y="350"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="leg" value="Символы: — сплошные стрелки: трафик/данные. — пунктир: service discovery/регистрация" style="text;html=1;align=left;fillColor=none;strokeColor=none;fontSize=10;fontColor=#555555" parent="1" vertex="1">
+                    <mxGeometry x="80" y="820" width="900" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
