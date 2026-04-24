@@ -1,0 +1,170 @@
+name: sharding-repl-cache
+
+services:
+
+  configsvr1:
+    container_name: configsvr1
+    image: mongo:latest
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all
+    volumes:
+      - configsvr1_data_container:/data/configdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  configsvr2:
+    container_name: configsvr2
+    image: mongo:latest
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all
+    volumes:
+      - configsvr2_data_container:/data/configdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  configsvr3:
+    container_name: configsvr3
+    image: mongo:latest
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all
+    volumes:
+      - configsvr3_data_container:/data/configdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  shard1a:
+    container_name: shard1a
+    image: mongo:latest
+    command: mongod --shardsvr --replSet shard1 --bind_ip_all
+    volumes:
+      - shard1a_data_container:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  shard1b:
+    container_name: shard1b
+    image: mongo:latest
+    command: mongod --shardsvr --replSet shard1 --bind_ip_all
+    volumes:
+      - shard1b_data_container:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  shard1c:
+    container_name: shard1c
+    image: mongo:latest
+    command: mongod --shardsvr --replSet shard1 --bind_ip_all
+    volumes:
+      - shard1c_data_container:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  shard2a:
+    container_name: shard2a
+    image: mongo:latest
+    command: mongod --shardsvr --replSet shard2 --bind_ip_all
+    volumes:
+      - shard2a_data_container:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  shard2b:
+    container_name: shard2b
+    image: mongo:latest
+    command: mongod --shardsvr --replSet shard2 --bind_ip_all
+    volumes:
+      - shard2b_data_container:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  shard2c:
+    container_name: shard2c
+    image: mongo:latest
+    command: mongod --shardsvr --replSet shard2 --bind_ip_all
+    volumes:
+      - shard2c_data_container:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+  mongos:
+    container_name: mongos
+    image: mongo:latest
+    command: mongos --configdb configReplSet/configsvr1:27019,configsvr2:27019,configsvr3:27019 --bind_ip_all
+    ports:
+      - 27017:27017
+    depends_on:
+      - configsvr1
+      - configsvr2
+      - configsvr3
+      - shard1a
+      - shard1b
+      - shard1c
+      - shard2a
+      - shard2b
+      - shard2c
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data_container:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+
+  
+
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos
+      - redis
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis:6379"
+
+volumes:
+  configsvr1_data_container:
+  configsvr2_data_container:
+  configsvr3_data_container:
+  shard1a_data_container:
+  shard1b_data_container:
+  shard1c_data_container:
+  shard2a_data_container:
+  shard2b_data_container:
+  shard2c_data_container:
+  redis_data_container:

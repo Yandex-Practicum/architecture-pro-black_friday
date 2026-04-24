@@ -1,0 +1,71 @@
+name: mongo-sharding
+
+services:
+  configsvr:
+    container_name: configsvr
+    image: mongo:latest
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all
+    volumes:
+      - configsvr_data_container:/data/configdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  shard1:
+    container_name: shard1
+    image: mongo:latest
+    command: mongod --shardsvr --replSet shard1 --bind_ip_all
+    volumes:
+      - shard1_data_container:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  shard2:
+    container_name: shard2
+    image: mongo:latest
+    command: mongod --shardsvr --replSet shard2 --bind_ip_all
+    volumes:
+      - shard2_data_container:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  mongos:
+    container_name: mongos
+    image: mongo:latest
+    command: mongos --configdb configReplSet/configsvr:27019 --bind_ip_all
+    ports:
+      - 27017:27017
+    depends_on:
+      - configsvr
+      - shard1
+      - shard2
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+
+volumes:
+  configsvr_data_container:
+  shard1_data_container:
+  shard2_data_container:
