@@ -1,0 +1,437 @@
+<mxfile host="app.diagrams.net" modified="2026-04-25T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram id="schema1" name="1. Шардирование">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- pymongo_api -->
+        <mxCell id="app1" value="pymongo_api&#10;(приложение)&#10;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="460" y="60" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <!-- mongos_router -->
+        <mxCell id="mongos1" value="mongos_router&#10;(маршрутизатор)&#10;:27017" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="460" y="200" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <!-- configSrv -->
+        <mxCell id="config1" value="configSrv&#10;(config server)&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="460" y="360" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <!-- shard1 -->
+        <mxCell id="s1" value="shard1&#10;(шард 1)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="360" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <!-- shard2 -->
+        <mxCell id="s2" value="shard2&#10;(шард 2)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="720" y="360" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <!-- Arrows -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="app1" target="mongos1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos1" target="config1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos1" target="s1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos1" target="s2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="schema2" name="2. Шардирование + Репликация">
+    <mxGraphModel dx="1622" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- pymongo_api -->
+        <mxCell id="app2" value="pymongo_api&#10;(приложение)&#10;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="40" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <!-- mongos_router -->
+        <mxCell id="mongos2" value="mongos_router&#10;(маршрутизатор)&#10;:27017" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="170" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <!-- Config Server RS Group -->
+        <mxCell id="cfgGroup" value="Config Server Replica Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d6b656;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="480" y="310" width="340" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg1" value="configSrv1&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="490" y="350" width="100" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg2" value="configSrv2&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="350" width="100" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg3" value="configSrv3&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="710" y="350" width="100" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Shard 1 RS Group -->
+        <mxCell id="sh1Group" value="Shard 1 Replica Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="310" width="370" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh11" value="shard1-1&#10;(primary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="50" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh12" value="shard1-2&#10;(secondary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="170" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh13" value="shard1-3&#10;(secondary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="290" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Shard 2 RS Group -->
+        <mxCell id="sh2Group" value="Shard 2 Replica Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="890" y="310" width="370" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh21" value="shard2-1&#10;(primary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="900" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh22" value="shard2-2&#10;(secondary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh23" value="shard2-3&#10;(secondary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Arrows -->
+        <mxCell id="ea1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="app2" target="mongos2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ea2" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos2" target="cfgGroup">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ea3" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos2" target="sh1Group">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ea4" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos2" target="sh2Group">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="schema3" name="3. Шардирование + Репликация + Кеш">
+    <mxGraphModel dx="1622" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- pymongo_api -->
+        <mxCell id="app3" value="pymongo_api&#10;(приложение)&#10;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="40" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <!-- Redis -->
+        <mxCell id="redis3" value="redis&#10;(кеш)&#10;:6379" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="860" y="40" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <!-- mongos_router -->
+        <mxCell id="mongos3" value="mongos_router&#10;(маршрутизатор)&#10;:27017" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="170" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <!-- Config Server RS Group -->
+        <mxCell id="cfgGroup3" value="Config Server Replica Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d6b656;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="480" y="310" width="340" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg31" value="configSrv1&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="490" y="350" width="100" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg32" value="configSrv2&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="350" width="100" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg33" value="configSrv3&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="710" y="350" width="100" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Shard 1 RS Group -->
+        <mxCell id="sh1Group3" value="Shard 1 Replica Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="310" width="370" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh311" value="shard1-1&#10;(primary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="50" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh312" value="shard1-2&#10;(secondary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="170" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh313" value="shard1-3&#10;(secondary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="290" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Shard 2 RS Group -->
+        <mxCell id="sh2Group3" value="Shard 2 Replica Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="890" y="310" width="370" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh321" value="shard2-1&#10;(primary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="900" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh322" value="shard2-2&#10;(secondary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh323" value="shard2-3&#10;(secondary)&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="350" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Arrows -->
+        <mxCell id="eb1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="app3" target="redis3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eb2" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="app3" target="mongos3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eb3" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos3" target="cfgGroup3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eb4" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos3" target="sh1Group3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eb5" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos3" target="sh2Group3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="schema4" name="4. + API Gateway и Consul">
+    <mxGraphModel dx="1622" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- Users -->
+        <mxCell id="users4" value="Пользователи" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="620" y="20" width="60" height="60" as="geometry"/>
+        </mxCell>
+        <!-- API Gateway -->
+        <mxCell id="gw4" value="API Gateway&#10;(nginx)&#10;:80" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="110" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Consul -->
+        <mxCell id="consul4" value="Consul&#10;(Service Discovery)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="860" y="110" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <!-- App instances -->
+        <mxCell id="appGrp4" value="Инстансы приложения" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="400" y="210" width="500" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="api41" value="pymongo_api_1&#10;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="420" y="240" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="api42" value="pymongo_api_2&#10;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="240" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="api43" value="pymongo_api_3&#10;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="740" y="240" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <!-- Redis -->
+        <mxCell id="redis4" value="redis&#10;(кеш)&#10;:6379" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="230" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <!-- mongos_router -->
+        <mxCell id="mongos4" value="mongos_router&#10;(маршрутизатор)&#10;:27017" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="360" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Config Server RS -->
+        <mxCell id="cfgGroup4" value="Config Server Replica Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d6b656;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="480" y="480" width="340" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg41" value="configSrv1&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="490" y="515" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg42" value="configSrv2&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="600" y="515" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg43" value="configSrv3&#10;:27019" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="710" y="515" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <!-- Shard 1 RS -->
+        <mxCell id="sh1Group4" value="Shard 1 Replica Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="480" width="370" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh411" value="shard1-1&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="50" y="515" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh412" value="shard1-2&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="170" y="515" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh413" value="shard1-3&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="290" y="515" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <!-- Shard 2 RS -->
+        <mxCell id="sh2Group4" value="Shard 2 Replica Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="890" y="480" width="370" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh421" value="shard2-1&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="900" y="515" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh422" value="shard2-2&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="515" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh423" value="shard2-3&#10;:27018" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="515" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <!-- Arrows -->
+        <mxCell id="ec1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="users4" target="gw4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ec2" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="gw4" target="appGrp4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ec3" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="1" source="gw4" target="consul4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ec4" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="1" source="appGrp4" target="consul4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ec5" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="appGrp4" target="redis4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ec6" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="appGrp4" target="mongos4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ec7" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos4" target="cfgGroup4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ec8" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos4" target="sh1Group4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ec9" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos4" target="sh2Group4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="schema5" name="5. + CDN">
+    <mxGraphModel dx="1622" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- Users in different regions -->
+        <mxCell id="userMsk" value="Пользователи&#10;(Москва)" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="60" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="userSpb" value="Пользователи&#10;(С.-Петербург)" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="520" y="20" width="60" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="userEkb" value="Пользователи&#10;(Екатеринбург)" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="840" y="20" width="60" height="60" as="geometry"/>
+        </mxCell>
+        <!-- CDN nodes -->
+        <mxCell id="cdnMsk" value="CDN&#10;(Москва)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0a30a;fontColor=#000000;strokeColor=#BD7000;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="160" y="110" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="cdnSpb" value="CDN&#10;(С.-Петербург)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0a30a;fontColor=#000000;strokeColor=#BD7000;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="480" y="110" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="cdnEkb" value="CDN&#10;(Екатеринбург)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0a30a;fontColor=#000000;strokeColor=#BD7000;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="110" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <!-- API Gateway -->
+        <mxCell id="gw5" value="API Gateway&#10;(nginx)&#10;:80" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="210" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <!-- Consul -->
+        <mxCell id="consul5" value="Consul&#10;(Service Discovery)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="860" y="210" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <!-- App instances -->
+        <mxCell id="appGrp5" value="Инстансы приложения" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;strokeWidth=2;dashed=1;fontSize=11;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="400" y="320" width="500" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="api51" value="pymongo_api_1&#10;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="420" y="345" width="140" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="api52" value="pymongo_api_2&#10;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="345" width="140" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="api53" value="pymongo_api_3&#10;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="740" y="345" width="140" height="45" as="geometry"/>
+        </mxCell>
+        <!-- Redis -->
+        <mxCell id="redis5" value="redis&#10;(кеш)&#10;:6379" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="340" width="140" height="55" as="geometry"/>
+        </mxCell>
+        <!-- mongos_router -->
+        <mxCell id="mongos5" value="mongos_router&#10;:27017" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="460" width="180" height="50" as="geometry"/>
+        </mxCell>
+        <!-- Config Server RS -->
+        <mxCell id="cfgGroup5" value="Config Server RS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d6b656;strokeWidth=2;dashed=1;fontSize=10;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="480" y="560" width="340" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg51" value="configSrv1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="490" y="590" width="100" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg52" value="configSrv2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="600" y="590" width="100" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="cfg53" value="configSrv3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="710" y="590" width="100" height="40" as="geometry"/>
+        </mxCell>
+        <!-- Shard 1 RS -->
+        <mxCell id="sh1Group5" value="Shard 1 RS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=10;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="560" width="370" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh511" value="shard1-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="50" y="590" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh512" value="shard1-2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="170" y="590" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh513" value="shard1-3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="290" y="590" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <!-- Shard 2 RS -->
+        <mxCell id="sh2Group5" value="Shard 2 RS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=10;fontStyle=3;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="890" y="560" width="370" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh521" value="shard2-1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="900" y="590" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh522" value="shard2-2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="590" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="sh523" value="shard2-3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="590" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <!-- Arrows: Users -> CDN -->
+        <mxCell id="ed1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="userMsk" target="cdnMsk">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ed2" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="userSpb" target="cdnSpb">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ed3" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="userEkb" target="cdnEkb">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- CDN -> API Gateway (origin) -->
+        <mxCell id="ed4" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="cdnMsk" target="gw5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ed5" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="cdnSpb" target="gw5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ed6" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="cdnEkb" target="gw5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Gateway -> Apps -->
+        <mxCell id="ed7" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="gw5" target="appGrp5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ed8" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="1" source="gw5" target="consul5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ed9" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="1" source="appGrp5" target="consul5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Apps -> Redis, mongos -->
+        <mxCell id="ed10" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="appGrp5" target="redis5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ed11" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="appGrp5" target="mongos5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Mongos -> shards, config -->
+        <mxCell id="ed12" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos5" target="cfgGroup5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ed13" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos5" target="sh1Group5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ed14" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="mongos5" target="sh2Group5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
