@@ -1,0 +1,84 @@
+name: mongo-sharding-repl
+
+services:
+  configsvr:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: ["mongod", "--configsvr", "--replSet", "configReplSet", "--port", "27019", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - configsvr_data:/data/db
+
+  shard1-1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: ["mongod", "--shardsvr", "--replSet", "shard1rs", "--port", "27018", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - shard1_1_data:/data/db
+
+  shard1-2:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: ["mongod", "--shardsvr", "--replSet", "shard1rs", "--port", "27018", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - shard1_2_data:/data/db
+
+  shard1-3:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: ["mongod", "--shardsvr", "--replSet", "shard1rs", "--port", "27018", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - shard1_3_data:/data/db
+
+  shard2-1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: ["mongod", "--shardsvr", "--replSet", "shard2rs", "--port", "27018", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - shard2_1_data:/data/db
+
+  shard2-2:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: ["mongod", "--shardsvr", "--replSet", "shard2rs", "--port", "27018", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - shard2_2_data:/data/db
+
+  shard2-3:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: ["mongod", "--shardsvr", "--replSet", "shard2rs", "--port", "27018", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - shard2_3_data:/data/db
+
+  mongos:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: ["mongos", "--configdb", "configReplSet/configsvr:27019", "--port", "27017", "--bind_ip_all"]
+    depends_on:
+      - configsvr
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+    restart: unless-stopped
+
+  pymongo_api:
+    image: kazhem/pymongo_api:1.0.0
+    depends_on:
+      - mongos
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+    restart: unless-stopped
+
+volumes:
+  configsvr_data:
+  shard1_1_data:
+  shard1_2_data:
+  shard1_3_data:
+  shard2_1_data:
+  shard2_2_data:
+  shard2_3_data:
