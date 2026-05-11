@@ -1,0 +1,5 @@
+site_name: Sprint 4
+theme: readthedocs
+plugins:
+  - search
+  - mermaid2

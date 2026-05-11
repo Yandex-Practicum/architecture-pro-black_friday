@@ -1,0 +1,248 @@
+# Схема данных онлайн-магазина «Мобильный мир»
+
+## 1. ER-диаграмма коллекций
+
+```mermaid
+erDiagram
+    orders {
+        ObjectId _id PK
+        ObjectId user_id "хешированный шард-ключ"
+        date created_at
+        array items "массив {product_id, price, quantity}"
+        string status
+        decimal total_amount
+        string geo_zone
+    }
+
+    products {
+        ObjectId _id PK "хешированный шард-ключ"
+        string name
+        string category
+        decimal price
+        object stock "ключ-значение по геозонам"
+        object attributes "доп. свойства"
+    }
+
+    carts {
+        ObjectId _id PK
+        ObjectId user_id
+        ObjectId session_id
+        ObjectId owner_id "хешированный шард-ключ = coalesce(user_id, session_id)"
+        array items "массив {product_id, quantity}"
+        string status "active|ordered|abandoned"
+        date created_at
+        date updated_at
+        date expires_at
+    }
+```
+
+## 2. Детальные схемы коллекций
+
+### 2.1. `orders` – заказы
+
+| Поле          | Тип          | Обязательное | Описание |
+|---------------|--------------|--------------|----------|
+| `_id`         | `ObjectId`   | да           | Уникальный идентификатор заказа |
+| `user_id`     | `ObjectId`   | да           | Идентификатор пользователя (хешированный шард-ключ) |
+| `created_at`  | `Date`       | да           | Дата и время оформления заказа |
+| `items`       | `array`      | да           | Список товаров: `[{ product_id, price, quantity }]` |
+| `status`      | `string`     | да           | Статус заказа |
+| `total_amount`| `decimal`    | да           | Общая сумма заказа |
+| `geo_zone`    | `string`     | да           | Геозона заказа |
+
+**Индексы:**
+- шард-ключ: `{ user_id: "hashed" }`
+- составной для истории: `{ user_id: 1, created_at: -1 }`
+
+Данный шард-ключ был выбран из следующих соображений:
+Хочется, чтобы данные по пользователям были равномерно распределены по кластеру, т.к. работа с данной таблицей идет в основном с поиском по пользователю для отображения истории заказов. Если все данные по пользователям будут лежать на одной ноде, данный поиск будет осуществляться достаточно быстро. 
+В качестве альтернативы был также рассмотрен гео-распределенный ключ по geo_zone, но не был взят как основной, т.к. больше города, такие как Санкт-Петербург или Москва будут явно нагружать свои шарды сильнее, чем все остальные.
+
+**Команды MongoDB:**
+Здесь и далее за основу в качестве примера используется кластер БД, созданный в Задание 4 (каталог task4 в данном репозитоии)
+
+Подключение к БД:
+docker exec -it mongos_router1 mongosh --port 27020
+
+1. Создание и шардирование коллекции orders:
+sh.shardCollection("somedb.orders", { "user_id": "hashed" })
+2. Дополнительный индекс для истории заказов пользователя
+db = db.getSiblingDB("somedb")
+db.orders.createIndex({ "user_id": 1, "created_at": -1 })
+
+
+### 2.2. `products` – товары
+
+| Поле          | Тип          | Обязательное | Описание |
+|---------------|--------------|--------------|----------|
+| `_id`         | `ObjectId`   | да           | Уникальный идентификатор товара (хешированный шард-ключ) |
+| `name`        | `string`     | да           | Наименование |
+| `category`    | `string`     | да           | Категория товара |
+| `price`       | `decimal`    | да           | Цена |
+| `stock`       | `object`     | да           | Остатки по геозонам: `{ "<зона>": <количество> }` |
+| `attributes`  | `object`     | нет          | Дополнительные атрибуты (цвет, размер) |
+
+**Индексы:**
+- шард-ключ: `{ _id: "hashed" }`
+- составной для поиска: `{ category: 1, price: 1 }`
+
+В качестве шард-ключа был выбран хэшированный ключ по УН товара. Данный выбор обусловлен тем, что он позволит равномерно распределить данные по кластеру.
+В качестве альтернативы рассматривался ключ по категории. Минусом данного ключа является потенциальная "популярность" конкретной категории товара, и перегрев одного из шарда. Плюсом является хранение всей категории в одном шарде, что позволит осуществлять быстрый поиск по категории и цене, которые необходимы для фильтрации товаров на странице с фильтрами. 
+В качестве компромисса был добавлен составной индекс во всем кластере для ускорения поиска в разделе и фильтрами { category: 1, price: 1 }.
+
+**Команды MongoDB:**
+1. Создание и шардирование коллекции products:
+sh.shardCollection("somedb.products", { "_id": "hashed" })
+2. Составной индекс для поиска по категории и цене
+db.products.createIndex({ "category": 1, "price": 1 })
+
+### 2.3. `carts` – корзины
+
+| Поле          | Тип          | Обязательное | Описание |
+|---------------|--------------|--------------|----------|
+| `_id`         | `ObjectId`   | да           | Уникальный идентификатор корзины |
+| `user_id`     | `ObjectId`   | нет          | Идентификатор авторизованного пользователя (null для гостей) |
+| `session_id`  | `ObjectId`   | нет          | Идентификатор гостевой сессии (null для авторизованных) |
+| `owner_id`    | `ObjectId`   | да           | Вычисляемое поле: `coalesce(user_id, session_id)`. Хешированный шард-ключ |
+| `items`       | `array`      | да           | Товары: `[{ product_id, quantity }]` |
+| `status`      | `string`     | да           | `active`, `ordered`, `abandoned` |
+| `created_at`  | `Date`       | да           | Дата создания |
+| `updated_at`  | `Date`       | да           | Дата последнего изменения |
+| `expires_at`  | `Date`       | да           | Время автоматического удаления (TTL) |
+
+**Индексы:**
+- шард-ключ: `{ owner_id: "hashed" }`
+- составной для активной корзины: `{ owner_id: 1, status: 1 }`
+- TTL-индекс: `{ expires_at: 1 }` (expireAfterSeconds: 0)
+
+В качестве шард-ключа предложено использовать новое поле owner_id, которое является вычисляемым (coalesce(user_id, session_id)). В MongoDB по умолчанию нет вычисляемых индексов, поэтому предполагается, что данное поле будет вычисляться на уровне приложения, и записываться в БД в готовом виде. Для имеющихся записей потребуется дозаполнение данного поля. Хэш-ключ по данному полю позволит равномерно распределить данные по кластеру БД, а также достаточно быстро осуществлять необходимый поиск из сценария подмены корзины "гостя" корзиной "авторизованного пользователя", т.к. и гостевая корзина, и корзина авторизованного пользователя будут попадать в один шард БД, и запрос не будет распределенным.
+
+**Команды MongoDB:**
+1. Создание и шардирование коллекции products:
+sh.shardCollection("somedb.carts", { "owner_id": "hashed" })
+2. Составной индекс для быстрого поиска активной корзины владельца
+db.carts.createIndex({ "owner_id": 1, "status": 1 })
+3. TTL-индекс для автоматического удаления устаревших корзин
+db.carts.createIndex(
+  { "expires_at": 1 },
+  { expireAfterSeconds: 0 }
+)
+
+
+### Тестирование распределения
+1. Подключение к БД
+use somedb
+
+2. Вспомогательная функция для случайного выбора элемента массива
+function randomItem(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+3. Вспомогательная функция для случайного числа в диапазоне
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+4. Генерация 1000 товаров (products):
+const categories = ["Электроника", "Аксессуары", "Аудио", "Бытовая техника", "Книги"];
+const geoZones = ["Москва", "Санкт-Петербург", "Екатеринбург", "Калининград", "Казань"];
+
+for (let i = 0; i < 1000; i++) {
+  const category = randomItem(categories);
+  const stock = {};
+  geoZones.forEach(zone => { stock[zone] = randomInt(0, 200); });
+
+  db.products.insertOne({
+    name: `${category} товар ${i + 1}`,
+    category: category,
+    price: NumberDecimal((Math.random() * 50000 + 100).toFixed(2)),
+    stock: stock,
+    attributes: {
+      color: randomItem(["черный", "белый", "серебристый", "красный", "синий"]),
+      size: randomItem(["S", "M", "L", "XL", "128GB", "256GB"])
+    }
+  });
+}
+print("Вставлено 1000 товаров");
+
+5. Генерация 1000 заказов (orders)
+// Получим массив _id всех товаров для случайной привязки
+const productIds = db.products.find({}, { _id: 1 }).toArray().map(p => p._id);
+const statuses = ["new", "processing", "completed", "cancelled"];
+
+for (let i = 0; i < 1000; i++) {
+  // Генерируем случайного пользователя (новый ObjectId каждый раз)
+  const userId = new ObjectId();
+  
+  // Создаём 1-3 случайные позиции в заказе
+  const itemsCount = randomInt(1, 3);
+  const items = [];
+  let total = 0;
+  for (let j = 0; j < itemsCount; j++) {
+    const prodId = randomItem(productIds);
+    const quantity = randomInt(1, 5);
+    // Для простоты цену берём случайную
+    const price = NumberDecimal((Math.random() * 50000 + 100).toFixed(2));
+    items.push({
+      product_id: prodId,
+      price: price,
+      quantity: quantity
+    });
+    total += parseFloat(price.toString()) * quantity;
+  }
+
+  db.orders.insertOne({
+    user_id: userId,
+    created_at: new Date(Date.now() - randomInt(0, 365 * 24 * 60 * 60 * 1000)),
+    items: items,
+    status: randomItem(statuses),
+    total_amount: NumberDecimal(total.toFixed(2)),
+    geo_zone: randomItem(geoZones)
+  });
+}
+print("Вставлено 1000 заказов");
+
+6. Генерация 1000 корзин (carts)
+for (let i = 0; i < 1000; i++) {
+  const isGuest = Math.random() < 0.3;
+  let userId = null;
+  let sessionId = null;
+  let ownerId;
+
+  if (isGuest) {
+    sessionId = new ObjectId();
+    ownerId = sessionId;
+  } else {
+    userId = new ObjectId();
+    ownerId = userId;
+  }
+
+  const itemsCount = randomInt(0, 5);
+  const items = [];
+  for (let j = 0; j < itemsCount; j++) {
+    items.push({
+      product_id: randomItem(productIds),
+      quantity: randomInt(1, 3)
+    });
+  }
+
+  const created = new Date(Date.now() - randomInt(0, 30 * 24 * 60 * 60 * 1000));
+  
+  db.carts.insertOne({
+    user_id: userId,
+    session_id: sessionId,
+    owner_id: ownerId,
+    items: items,
+    status: randomItem(cartStatuses),
+    created_at: created,
+    updated_at: new Date(created.getTime() + randomInt(0, 3600000)),
+    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // всегда будущее время, чтобы данные сутки могли пожить
+  });
+}
+
+7. Проверка, что данные равномерно распределились по шардам:
+db.products.getShardDistribution()
+db.orders.getShardDistribution()
+db.carts.getShardDistribution()
+
+Распределение по шардам ~50% в каждом, как и ожидалось. 
