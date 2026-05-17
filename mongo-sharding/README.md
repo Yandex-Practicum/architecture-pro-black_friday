@@ -1,26 +1,17 @@
-# pymongo-api
+    # pymongo-api
 
 ## Как запустить
 
-Задание №2 - из каталога `mongo-sharding`:
+Запускаем mongodb и приложение
 
 ```shell
 docker compose up -d
-./scripts/init-cluster.sh
 ```
 
-Задание №3 - из каталога `mongo-sharding-repl`:
+Заполняем mongodb данными
 
 ```shell
-docker compose up -d
-./scripts/init-cluster.sh
-```
-
-Задание №4 - из каталога `sharding-repl-cache`:
-
-```shell
-docker compose up -d
-./scripts/init-cluster.sh
+./scripts/mongo-init.sh
 ```
 
 ## Как проверить
