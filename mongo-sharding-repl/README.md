@@ -1,18 +1,23 @@
-# mongo-sharding
+# mongo-sharding-repl
 
-Стенд с шардированным кластером MongoDB: 2 шарда, 1 config server, 1 mongos router и инстанс `pymongo_api`.
+Стенд с шардированным **и реплицированным** кластером MongoDB:
+- 2 шарда, каждый — replica-set из 3 узлов;
+- config server — replica-set из 3 узлов;
+- 1 `mongos` router, 1 инстанс `pymongo_api`.
 
 ## Топология
 
-| Сервис          | Образ                                  | Назначение                                      | Внутр. порт |
-| --------------- | -------------------------------------- | ----------------------------------------------- | ----------- |
-| `configSrv`     | `dh-mirror.gitverse.ru/mongo:latest`   | Конфиг-сервер кластера (replSet `config_server`) | 27019       |
-| `shard1`        | `dh-mirror.gitverse.ru/mongo:latest`   | Шард 1 (replSet `shard1`)                       | 27018       |
-| `shard2`        | `dh-mirror.gitverse.ru/mongo:latest`   | Шард 2 (replSet `shard2`)                       | 27018       |
-| `mongos_router` | `dh-mirror.gitverse.ru/mongo:latest`   | Маршрутизатор запросов                          | 27017       |
-| `pymongo_api`   | `kazhem/pymongo_api:1.0.0`             | Клиентское приложение (FastAPI)                 | 8080        |
+| Сервис                          | Replica set     | Назначение                  | Внутр. порт |
+| ------------------------------- | --------------- | --------------------------- | ----------- |
+| `configSrv1`, `configSrv2`, `configSrv3` | `config_server` | Метаданные кластера         | 27019       |
+| `shard1-1`, `shard1-2`, `shard1-3`       | `shard1`        | Данные шарда 1              | 27018       |
+| `shard2-1`, `shard2-2`, `shard2-3`       | `shard2`        | Данные шарда 2              | 27018       |
+| `mongos_router`                 | —               | Маршрутизатор запросов      | 27017       |
+| `pymongo_api`                   | —               | Клиентское приложение       | 8080        |
 
-Шардируется коллекция `somedb.helloDoc` с шард-ключом `{ name: "hashed" }` — это даёт примерно равномерное распределение 1000 тестовых документов между двумя шардами.
+Образы — `dh-mirror.gitverse.ru/mongo:latest` для всех узлов кластера и `kazhem/pymongo_api:1.0.0` для приложения.
+
+Шардируется коллекция `somedb.helloDoc` с шард-ключом `{ name: "hashed" }`.
 
 ## Как запустить
 
@@ -22,32 +27,20 @@ docker compose up -d
 ```
 
 Скрипт сделает:
-1. `rs.initiate` для `configSrv`, `shard1`, `shard2`.
-2. Добавит шарды в кластер через `mongos` (`sh.addShard`).
-3. Включит шардирование БД и коллекции (`sh.enableSharding`, `sh.shardCollection`).
-4. Зальёт 1000 документов в `somedb.helloDoc` через `mongos`.
-5. Распечатает количество документов в каждом шарде.
+1. `rs.initiate` для `config_server` (3 узла: `configSrv1/2/3`).
+2. `rs.initiate` для `shard1` (3 узла: `shard1-1/2/3`) и `shard2` (3 узла: `shard2-1/2/3`).
+3. Подождёт выборы primary во всех реплика-сетах.
+4. Через `mongos`: `sh.addShard` для обоих шардов (с указанием полного состава реплика-сета), `sh.enableSharding("somedb")`, `sh.shardCollection("somedb.helloDoc", { name: "hashed" })`.
+5. Зальёт 1000 документов в `somedb.helloDoc` через `mongos`.
+6. Распечатает количество документов и количество реплик в каждом шарде.
 
 После завершения скрипта приложение доступно на http://localhost:8080.
-В корневом ответе появится поле `shards` с именами обоих шардов и `mongo_is_mongos: true`.
+В корневом ответе поле `shards` покажет имена реплика-сетов и их составы, например:
+`"shard1": "shard1/shard1-1:27018,shard1-2:27018,shard1-3:27018"` — это и есть «3 реплики на шард».
 
 ## Полезные команды
 
-Подсчитать документы напрямую на каждом шарде:
-
-```shell
-docker compose exec -T shard1 mongosh --port 27018 --quiet <<EOF
-use somedb
-db.helloDoc.countDocuments()
-EOF
-
-docker compose exec -T shard2 mongosh --port 27018 --quiet <<EOF
-use somedb
-db.helloDoc.countDocuments()
-EOF
-```
-
-Посмотреть распределение чанков и статус шардирования:
+Статус шардирования и распределение чанков:
 
 ```shell
 docker compose exec -T mongos_router mongosh --port 27017 --quiet <<EOF
@@ -55,7 +48,25 @@ sh.status()
 EOF
 ```
 
-Остановить и удалить стенд вместе с данными:
+Состав и состояние реплика-сета (по любому узлу):
+
+```shell
+docker compose exec -T shard1-1 mongosh --port 27018 --quiet <<EOF
+rs.status()
+EOF
+```
+
+Подсчитать документы напрямую на каждом шарде (через primary):
+
+```shell
+docker compose exec -T shard1-1 mongosh --port 27018 --quiet <<EOF
+rs.secondaryOk()
+use somedb
+db.helloDoc.countDocuments()
+EOF
+```
+
+Остановить стенд и удалить тома:
 
 ```shell
 docker compose down -v
