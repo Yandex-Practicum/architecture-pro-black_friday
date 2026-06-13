@@ -1,0 +1,39 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.6.4 Chrome/124.0.6367.207 Electron/30.0.6 Safari/537.36">
+  <diagram name="Page-1" id="-H_mtQnk-PTXWXPvYvuk">
+    <mxGraphModel dx="959" dy="601" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="zA23MoTUsTF4_91t8viU-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="pymongo-api" vertex="1">
+          <mxGeometry height="60" width="120" x="360" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="zA23MoTUsTF4_91t8viU-4" edge="1" parent="1" source="zA23MoTUsTF4_91t8viU-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;labelBackgroundColor=none;fontColor=default;" target="eBS_vQCZx7JN7miT-C1--2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="560" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eBS_vQCZx7JN7miT-C1--2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;mongos_router&lt;/b&gt;&lt;br&gt;DNS: mongos_router&lt;br&gt;порт 27020" vertex="1">
+          <mxGeometry height="60" width="130" x="560" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="eBS_vQCZx7JN7miT-C1--5" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;labelBackgroundColor=none;fillColor=#ffe6cc;strokeColor=#d79b00;" value="&lt;b&gt;configSrv&lt;/b&gt;&lt;br&gt;DNS: configSrv&lt;br&gt;порт 27017" vertex="1">
+          <mxGeometry height="60" width="140" x="560" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="eBS_vQCZx7JN7miT-C1--6" edge="1" parent="1" source="eBS_vQCZx7JN7miT-C1--2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.461;entryY=1.03;entryDx=0;entryDy=0;entryPerimeter=0;labelBackgroundColor=none;fontColor=default;" target="eBS_vQCZx7JN7miT-C1--5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eBS_vQCZx7JN7miT-C1--7" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;labelBackgroundColor=none;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" value="&lt;b&gt;shard1-2&lt;br&gt;&lt;/b&gt;DNS: shard1-2&lt;br&gt;порт 27019" vertex="1">
+          <mxGeometry height="80" width="140" x="750" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="eBS_vQCZx7JN7miT-C1--8" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;labelBackgroundColor=none;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" value="&lt;b&gt;shard1-1&lt;/b&gt;&lt;br&gt;DNS: shard11&lt;br&gt;порт 27019" vertex="1">
+          <mxGeometry height="80" width="140" x="750" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="eBS_vQCZx7JN7miT-C1--9" edge="1" parent="1" source="eBS_vQCZx7JN7miT-C1--2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;labelBackgroundColor=none;fontColor=default;" target="eBS_vQCZx7JN7miT-C1--8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eBS_vQCZx7JN7miT-C1--10" edge="1" parent="1" source="eBS_vQCZx7JN7miT-C1--2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;labelBackgroundColor=none;fontColor=default;" target="eBS_vQCZx7JN7miT-C1--7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
