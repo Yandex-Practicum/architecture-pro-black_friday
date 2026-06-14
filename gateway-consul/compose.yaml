@@ -1,0 +1,241 @@
+name: gateway-consul
+
+services:
+  configSrv:
+    container_name: ${CONFIG_SERVICE:-configSrv}
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --configsvr
+      - --replSet
+      - ${CONFIG_REPL_SET:-configReplSet}
+      - --bind_ip_all
+      - --port
+      - ${CONFIG_PORT:-27017}
+    volumes:
+      - configSrv_data_container:/data/db
+    networks:
+      - gateway
+
+  shard1-1:
+    container_name: ${SHARD1_SERVICE:-shard1-1}
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD1_REPL_SET:-rs-shard1}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard1_1_data_container:/data/db
+    networks:
+      - gateway
+
+  shard1-2:
+    container_name: shard1-2
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD1_REPL_SET:-rs-shard1}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard1_2_data_container:/data/db
+    networks:
+      - gateway
+
+  shard1-3:
+    container_name: shard1-3
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD1_REPL_SET:-rs-shard1}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard1_3_data_container:/data/db
+    networks:
+      - gateway
+
+  shard2-1:
+    container_name: ${SHARD2_SERVICE:-shard2-1}
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD2_REPL_SET:-rs-shard2}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard2_1_data_container:/data/db
+    networks:
+      - gateway
+
+  shard2-2:
+    container_name: shard2-2
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD2_REPL_SET:-rs-shard2}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard2_2_data_container:/data/db
+    networks:
+      - gateway
+
+  shard2-3:
+    container_name: shard2-3
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD2_REPL_SET:-rs-shard2}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard2_3_data_container:/data/db
+    networks:
+      - gateway
+
+  mongos-router:
+    container_name: ${MONGOS_SERVICE:-mongos-router}
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    depends_on:
+      - configSrv
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+    command:
+      - mongos
+      - --configdb
+      - ${CONFIG_REPL_SET:-configReplSet}/${CONFIG_SERVICE:-configSrv}:${CONFIG_PORT:-27017}
+      - --bind_ip_all
+      - --port
+      - ${MONGOS_INTERNAL_PORT:-27020}
+    ports:
+      - ${MONGOS_EXTERNAL_PORT:-27020}:${MONGOS_INTERNAL_PORT:-27020}
+    restart: unless-stopped
+    networks:
+      - gateway
+
+  redis-1:
+    container_name: redis-1
+    image: ${REDIS_IMAGE:-redis:7-alpine}
+    networks:
+      - gateway
+
+  redis-2:
+    container_name: redis-2
+    image: ${REDIS_IMAGE:-redis:7-alpine}
+    depends_on:
+      - redis-1
+    command: redis-server --replicaof redis-1 6379
+    networks:
+      - gateway
+
+  pymongo_api_1:
+    container_name: pymongo_api_1
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos-router
+      - redis-1
+    environment:
+      MONGODB_URL: "mongodb://${MONGOS_SERVICE:-mongos-router}:${MONGOS_INTERNAL_PORT:-27020}"
+      MONGODB_DATABASE_NAME: ${MONGODB_DATABASE_NAME:-somedb}
+      REDIS_URL: "redis://redis-1:6379"
+      INSTANCE_ID: pymongo_api_1
+    expose:
+      - "8080"
+    networks:
+      - gateway
+
+  pymongo_api_2:
+    container_name: pymongo_api_2
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos-router
+      - redis-1
+    environment:
+      MONGODB_URL: "mongodb://${MONGOS_SERVICE:-mongos-router}:${MONGOS_INTERNAL_PORT:-27020}"
+      MONGODB_DATABASE_NAME: ${MONGODB_DATABASE_NAME:-somedb}
+      REDIS_URL: "redis://redis-1:6379"
+      INSTANCE_ID: pymongo_api_2
+    expose:
+      - "8080"
+    networks:
+      - gateway
+
+  etcd:
+    image: bitnamilegacy/etcd:3.5.11
+    restart: always
+    volumes:
+      - etcd_data:/bitnami/etcd
+    environment:
+      ETCD_ENABLE_V2: "true"
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+    networks:
+      - gateway
+
+  consul:
+    image: consul:1.15.1
+    container_name: consul
+    restart: always
+    ports:
+      - "8500:8500"
+    command: agent -server -bootstrap-expect=1 -node=agent-one -client 0.0.0.0 -log-level info -data-dir=/consul/data -enable-script-checks
+    networks:
+      - gateway
+
+  apisix:
+    image: apache/apisix:3.9.0-debian
+    restart: always
+    depends_on:
+      - etcd
+      - consul
+    volumes:
+      - ./apisix_conf/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    ports:
+      - "${GATEWAY_EXTERNAL_PORT:-9080}:9080/tcp"
+      - "${APISIX_ADMIN_PORT:-9180}:9180/tcp"
+      - "9091:9091/tcp"
+    networks:
+      - gateway
+
+networks:
+  gateway:
+    driver: bridge
+
+volumes:
+  configSrv_data_container:
+  shard1_1_data_container:
+  shard1_2_data_container:
+  shard1_3_data_container:
+  shard2_1_data_container:
+  shard2_2_data_container:
+  shard2_3_data_container:
+  etcd_data:
