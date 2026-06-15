@@ -1,0 +1,39 @@
+<mxfile host="65bd71144e">
+    <diagram name="Page-1" id="-H_mtQnk-PTXWXPvYvuk">
+        <mxGraphModel dx="187" dy="129" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="zA23MoTUsTF4_91t8viU-3" value="pymongo-api" style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="320" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="zA23MoTUsTF4_91t8viU-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;labelBackgroundColor=none;fontColor=default;" parent="1" source="zA23MoTUsTF4_91t8viU-3" target="eBS_vQCZx7JN7miT-C1--2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="560" y="320" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="eBS_vQCZx7JN7miT-C1--2" value="&lt;b&gt;mongos_router&lt;/b&gt;&lt;br&gt;DNS: mongos-router&lt;br&gt;порт 27020" style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="320" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="eBS_vQCZx7JN7miT-C1--5" value="&lt;b&gt;configSrv&lt;/b&gt;&lt;br&gt;DNS: configSrv&lt;br&gt;порт 27017" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;labelBackgroundColor=none;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="210" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="eBS_vQCZx7JN7miT-C1--6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.461;entryY=1.03;entryDx=0;entryDy=0;entryPerimeter=0;labelBackgroundColor=none;fontColor=default;" parent="1" source="eBS_vQCZx7JN7miT-C1--2" target="eBS_vQCZx7JN7miT-C1--5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="eBS_vQCZx7JN7miT-C1--7" value="&lt;b&gt;shard1-2&lt;br&gt;&lt;/b&gt;DNS: shard1-2&lt;br&gt;порт 27019" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;labelBackgroundColor=none;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="360" width="140" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="eBS_vQCZx7JN7miT-C1--8" value="&lt;b&gt;shard1-1&lt;/b&gt;&lt;br&gt;DNS: shard11&lt;br&gt;порт 27019" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;labelBackgroundColor=none;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="250" width="140" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="eBS_vQCZx7JN7miT-C1--9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;labelBackgroundColor=none;fontColor=default;" parent="1" source="eBS_vQCZx7JN7miT-C1--2" target="eBS_vQCZx7JN7miT-C1--8" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="eBS_vQCZx7JN7miT-C1--10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;labelBackgroundColor=none;fontColor=default;" parent="1" source="eBS_vQCZx7JN7miT-C1--2" target="eBS_vQCZx7JN7miT-C1--7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
