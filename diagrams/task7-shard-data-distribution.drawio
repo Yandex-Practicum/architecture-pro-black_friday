@@ -1,0 +1,142 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="shard-data-distribution" id="task7-data-dist">
+    <mxGraphModel dx="1725" dy="1081" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1280" math="0" shadow="0">
+      <root>
+        <mxCell id="d0" />
+        <mxCell id="d1" parent="d0" />
+        <mxCell id="TDwbWscZ5--_D-r2ybP--2" edge="1" parent="d1" source="mongos-top" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;curved=1;" target="shard-label-r">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mongos-top" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="mongos-router :27020&lt;br&gt;смотрит шард-ключ → выбирает chunk → шлёт на Primary шарда" vertex="1">
+          <mxGeometry height="52" width="340" x="560" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="shard-label-l" parent="d1" style="text;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;align=center;fontStyle=1;fontSize=13;rounded=1;" value="rs-shard1&lt;br&gt;shard1-1 (P) + shard1-2/3 (S)" vertex="1">
+          <mxGeometry height="660" width="540" x="190" y="243.98" as="geometry" />
+        </mxCell>
+        <mxCell id="shard-label-r" parent="d1" style="text;html=1;align=center;fontStyle=1;fontSize=13;rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="rs-shard2&lt;br&gt;shard2-1 (P) + shard2-2/3 (S)" vertex="1">
+          <mxGeometry height="660" width="540" x="730" y="243.98" as="geometry" />
+        </mxCell>
+        <mxCell id="divider" parent="d1" style="line;strokeWidth=2;strokeColor=#6c8ebf;dashed=1;" value="" vertex="1">
+          <mxGeometry height="680" width="10" x="610" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="prod-hdr" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;align=center;spacingLeft=12;" value="products   шард-ключ: { _id: &quot;hashed&quot; }   → hash(_id) определяет шард" vertex="1">
+          <mxGeometry height="32" width="1060" x="200" y="303.98" as="geometry" />
+        </mxCell>
+        <mxCell id="prod-bar-l" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;" value="chunk(s) на rs-shard1&lt;br&gt;~50% всех товаров" vertex="1">
+          <mxGeometry height="56" width="520" x="200" y="345.98" as="geometry" />
+        </mxCell>
+        <mxCell id="prod-bar-r" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;" value="chunk(s) на rs-shard2&lt;br&gt;~50% всех товаров" vertex="1">
+          <mxGeometry height="56" width="520" x="740" y="345.98" as="geometry" />
+        </mxCell>
+        <mxCell id="doc-p1" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1" value="prod_book_221" vertex="1">
+          <mxGeometry height="28" width="110" x="320" y="413.98" as="geometry" />
+        </mxCell>
+        <mxCell id="doc-p2" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1" value="prod_7aa991" vertex="1">
+          <mxGeometry height="28" width="100" x="480" y="413.98" as="geometry" />
+        </mxCell>
+        <mxCell id="doc-p3" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1" value="prod_8f3a2c1b" vertex="1">
+          <mxGeometry height="28" width="110" x="900" y="413.98" as="geometry" />
+        </mxCell>
+        <mxCell id="doc-p4" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=10;fontStyle=1" value="prod_xyz004" vertex="1">
+          <mxGeometry height="28" width="100" x="1060" y="413.98" as="geometry" />
+        </mxCell>
+        <mxCell id="ord-hdr" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=12;align=center;spacingLeft=12;" value="orders   шард-ключ: { customer_id: 1, created_at: 1 }   → все заказы одного клиента на одном шарде" vertex="1">
+          <mxGeometry height="32" width="1060" x="200" y="503.98" as="geometry" />
+        </mxCell>
+        <mxCell id="ord-bar-l" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=center;" value="диапазон customer_id → rs-shard1&lt;br&gt;напр. user_55001, user_33102…" vertex="1">
+          <mxGeometry height="56" width="520" x="200" y="545.98" as="geometry" />
+        </mxCell>
+        <mxCell id="ord-bar-r" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=center;" value="диапазон customer_id → rs-shard2&lt;br&gt;напр. user_10482, user_88291…" vertex="1">
+          <mxGeometry height="56" width="520" x="740" y="545.98" as="geometry" />
+        </mxCell>
+        <mxCell id="ord-u1" parent="d1" style="swimlane;fontStyle=1;startSize=22;fontSize=10;" value="user_55001" vertex="1">
+          <mxGeometry height="72" width="200" x="300" y="613.98" as="geometry" />
+        </mxCell>
+        <mxCell id="ord-u1a" parent="ord-u1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=9;" value="ord_2026-05-12" vertex="1">
+          <mxGeometry height="22" width="180" x="10" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ord-u1b" parent="ord-u1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=9;" value="ord_2026-06-01" vertex="1">
+          <mxGeometry height="22" width="180" x="10" y="52" as="geometry" />
+        </mxCell>
+        <mxCell id="ord-u2" parent="d1" style="swimlane;fontStyle=1;startSize=22;fontSize=10;" value="user_10482" vertex="1">
+          <mxGeometry height="72" width="200" x="900" y="613.98" as="geometry" />
+        </mxCell>
+        <mxCell id="ord-u2a" parent="ord-u2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=9;" value="ord_a91f0042" vertex="1">
+          <mxGeometry height="22" width="180" x="10" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ord-u2b" parent="ord-u2" style="rounded=1;whiteSpace=wrap;html=1;fontSize=9;" value="ord_b02c1188" vertex="1">
+          <mxGeometry height="22" width="180" x="10" y="52" as="geometry" />
+        </mxCell>
+        <mxCell id="cart-hdr" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;align=center;spacingLeft=12;" value="carts   шард-ключ: { owner_key: 1 }   → одна корзина = один документ на одном шарде" vertex="1">
+          <mxGeometry height="32" width="1060" x="200" y="753.98" as="geometry" />
+        </mxCell>
+        <mxCell id="cart-bar-l" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=center;" value="owner_key диапазон → rs-shard1" vertex="1">
+          <mxGeometry height="48" width="520" x="200" y="795.98" as="geometry" />
+        </mxCell>
+        <mxCell id="cart-bar-r" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=center;" value="owner_key диапазон → rs-shard2" vertex="1">
+          <mxGeometry height="48" width="520" x="740" y="795.98" as="geometry" />
+        </mxCell>
+        <mxCell id="doc-c1" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;fontSize=10;" value="session:sess_9f2caa01&lt;br&gt;items: [prod_book_221]" vertex="1">
+          <mxGeometry height="40" width="180" x="340" y="855.98" as="geometry" />
+        </mxCell>
+        <mxCell id="doc-c2" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;fontSize=10;" value="user:user_10482&lt;br&gt;items: [prod_8f3a2c1b]" vertex="1">
+          <mxGeometry height="40" width="180" x="920" y="855.98" as="geometry" />
+        </mxCell>
+        <mxCell id="flow-hdr" parent="d1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#666666;fontColor=#ffffff;fontStyle=1;fontSize=12;align=left;spacingLeft=12;" value="Пример: оформление заказа user_10482 (prod_8f3a2c1b + prod_book_221 в корзине)" vertex="1">
+          <mxGeometry height="32" width="1070" x="200" y="960" as="geometry" />
+        </mxCell>
+        <mxCell id="step1" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="1. read cart&lt;br&gt;owner_key=user:10482" vertex="1">
+          <mxGeometry height="44" width="130" x="300" y="1040" as="geometry" />
+        </mxCell>
+        <mxCell id="step2" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="2. update stock&lt;br&gt;prod_8f3a2c1b" vertex="1">
+          <mxGeometry height="44" width="130" x="480" y="1040" as="geometry" />
+        </mxCell>
+        <mxCell id="TDwbWscZ5--_D-r2ybP--3" edge="1" parent="d1" source="step3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cross-shard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="step3" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="3. update stock&lt;br&gt;prod_book_221" vertex="1">
+          <mxGeometry height="44" width="130" x="660" y="1040" as="geometry" />
+        </mxCell>
+        <mxCell id="step4" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="4. insert order&lt;br&gt;customer_id=10482" vertex="1">
+          <mxGeometry height="44" width="130" x="840" y="1040" as="geometry" />
+        </mxCell>
+        <mxCell id="step5" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="5. cart→ordered" vertex="1">
+          <mxGeometry height="44" width="100" x="1020" y="1040" as="geometry" />
+        </mxCell>
+        <mxCell id="t1" parent="d1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#9673a6;fontStyle=1" value="→ rs-shard2" vertex="1">
+          <mxGeometry height="20" width="80" x="325" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="t2" parent="d1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#82b366;fontStyle=1" value="→ rs-shard2" vertex="1">
+          <mxGeometry height="20" width="80" x="505" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="t3" parent="d1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#82b366;fontStyle=1" value="→ rs-shard1 ⚡" vertex="1">
+          <mxGeometry height="20" width="90" x="680" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="t4" parent="d1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#d6b656;fontStyle=1" value="→ rs-shard2" vertex="1">
+          <mxGeometry height="20" width="80" x="865" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="t5" parent="d1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#9673a6;fontStyle=1" value="→ rs-shard2" vertex="1">
+          <mxGeometry height="20" width="80" x="1030" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="e-s1s2" edge="1" parent="d1" source="step1" style="endArrow=block;html=1;strokeColor=#666666;" target="step2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-s2s3" edge="1" parent="d1" source="step2" style="endArrow=block;html=1;strokeColor=#666666;" target="step3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-s3s4" edge="1" parent="d1" source="step3" style="endArrow=block;html=1;strokeColor=#666666;" target="step4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-s4s5" edge="1" parent="d1" source="step4" style="endArrow=block;html=1;strokeColor=#666666;" target="step5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="cross-shard" parent="d1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e51400;strokeColor=#B20000;fontSize=11;align=left;spacingLeft=10;fontColor=#ffffff;" value="&lt;b&gt;3 шага — 2 шарда&lt;/b&gt;: cart + order + prod_8f3a → rs-shard2, но prod_book_221 → rs-shard1&lt;br&gt;Без multi-document transaction можно продать то, чего уже нет на складе" vertex="1">
+          <mxGeometry height="52" width="465" x="492.5" y="1150" as="geometry" />
+        </mxCell>
+        <mxCell id="TDwbWscZ5--_D-r2ybP--1" edge="1" parent="d1" source="mongos-top" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.487;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=orthogonalEdgeStyle;curved=1;" target="shard-label-l">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,145 @@
+name: mongo-sharding-repl
+
+services:
+  configSrv:
+    container_name: ${CONFIG_SERVICE:-configSrv}
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --configsvr
+      - --replSet
+      - ${CONFIG_REPL_SET:-configReplSet}
+      - --bind_ip_all
+      - --port
+      - ${CONFIG_PORT:-27017}
+    volumes:
+      - configSrv_data_container:/data/db
+
+  shard1-1:
+    container_name: ${SHARD1_SERVICE:-shard1-1}
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD1_REPL_SET:-rs-shard1}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard1_1_data_container:/data/db
+
+  shard1-2:
+    container_name: shard1-2
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD1_REPL_SET:-rs-shard1}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard1_2_data_container:/data/db
+
+  shard1-3:
+    container_name: shard1-3
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD1_REPL_SET:-rs-shard1}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard1_3_data_container:/data/db
+
+  shard2-1:
+    container_name: ${SHARD2_SERVICE:-shard2-1}
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD2_REPL_SET:-rs-shard2}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard2_1_data_container:/data/db
+
+  shard2-2:
+    container_name: shard2-2
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD2_REPL_SET:-rs-shard2}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard2_2_data_container:/data/db
+
+  shard2-3:
+    container_name: shard2-3
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    command:
+      - mongod
+      - --shardsvr
+      - --replSet
+      - ${SHARD2_REPL_SET:-rs-shard2}
+      - --bind_ip_all
+      - --port
+      - ${SHARD_PORT:-27019}
+    volumes:
+      - shard2_3_data_container:/data/db
+
+  mongos-router:
+    container_name: ${MONGOS_SERVICE:-mongos-router}
+    image: ${MONGO_IMAGE:-dh-mirror.gitverse.ru/mongo:latest}
+    depends_on:
+      - configSrv
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+    command:
+      - mongos
+      - --configdb
+      - ${CONFIG_REPL_SET:-configReplSet}/${CONFIG_SERVICE:-configSrv}:${CONFIG_PORT:-27017}
+      - --bind_ip_all
+      - --port
+      - ${MONGOS_INTERNAL_PORT:-27020}
+    ports:
+      - ${MONGOS_EXTERNAL_PORT:-27020}:${MONGOS_INTERNAL_PORT:-27020}
+    restart: unless-stopped
+
+  pymongo_api:
+    container_name: pymongo_api
+    image: kazhem/pymongo_api:1.0.0
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos-router
+    ports:
+      - ${API_EXTERNAL_PORT:-8080}:8080
+    environment:
+      MONGODB_URL: "mongodb://${MONGOS_SERVICE:-mongos-router}:${MONGOS_INTERNAL_PORT:-27020}"
+      MONGODB_DATABASE_NAME: ${MONGODB_DATABASE_NAME:-somedb}
+
+volumes:
+  configSrv_data_container:
+  shard1_1_data_container:
+  shard1_2_data_container:
+  shard1_3_data_container:
+  shard2_1_data_container:
+  shard2_2_data_container:
+  shard2_3_data_container:
