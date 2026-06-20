@@ -80,8 +80,14 @@
         <mxCell id="edge-client-apisix" edge="1" parent="dc-group" source="client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="apisix">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="api2" parent="dc-group" style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="&lt;b&gt;pymongo-api-1 +n&lt;/b&gt;&lt;br&gt;DNS: pymongo-api-1 +n&lt;br&gt;порт 8080" vertex="1">
-          <mxGeometry height="60" width="140" x="330" y="280" as="geometry" />
+        <mxCell id="api1" parent="dc-group" style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="&lt;b&gt;pymongo_api_1&lt;/b&gt;&lt;br&gt;DNS: pymongo_api_1&lt;br&gt;порт 8080" vertex="1">
+          <mxGeometry height="60" width="140" x="300" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="api2" parent="dc-group" style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;" value="&lt;b&gt;pymongo_api_2&lt;/b&gt;&lt;br&gt;DNS: pymongo_api_2&lt;br&gt;порт 8080" vertex="1">
+          <mxGeometry height="60" width="140" x="300" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-apisix-api1" edge="1" parent="dc-group" source="apisix" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="api1">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="edge-apisix-api2" edge="1" parent="dc-group" source="apisix" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="api2">
           <mxGeometry relative="1" as="geometry" />
@@ -143,13 +149,22 @@
         <mxCell id="HTU1C_y3JVFv92HttyV6-11" edge="1" parent="dc-group" source="aOjJM1n3sBIoVraeIQLE-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" target="redis_4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="_h50IIKlMMUqk4yt-6it-17" edge="1" parent="dc-group" source="api2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="4">
+        <mxCell id="_h50IIKlMMUqk4yt-6it-17" edge="1" parent="dc-group" source="api1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="_h50IIKlMMUqk4yt-6it-19" edge="1" parent="dc-group" source="api2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="aOjJM1n3sBIoVraeIQLE-11">
+        <mxCell id="edge-api2-mongos" edge="1" parent="dc-group" source="api2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="_h50IIKlMMUqk4yt-6it-20" edge="1" parent="dc-group" source="api2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="consul">
+        <mxCell id="_h50IIKlMMUqk4yt-6it-19" edge="1" parent="dc-group" source="api1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="aOjJM1n3sBIoVraeIQLE-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-api2-redis" edge="1" parent="dc-group" source="api2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="aOjJM1n3sBIoVraeIQLE-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="_h50IIKlMMUqk4yt-6it-20" edge="1" parent="dc-group" source="api1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="consul">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-api2-consul" edge="1" parent="dc-group" source="api2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="consul">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="_h50IIKlMMUqk4yt-6it-21" edge="1" parent="dc-group" source="apisix" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.007;entryY=0.381;entryDx=0;entryDy=0;entryPerimeter=0;" target="consul">

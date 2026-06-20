@@ -123,6 +123,7 @@ services:
 
   pymongo_api:
     container_name: pymongo_api
+    image: kazhem/pymongo_api:1.0.0
     build:
       context: api_app
       dockerfile: Dockerfile

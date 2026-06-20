@@ -154,6 +154,7 @@ services:
 
   pymongo_api_1:
     container_name: pymongo_api_1
+    image: kazhem/pymongo_api:1.0.0
     build:
       context: api_app
       dockerfile: Dockerfile
@@ -172,6 +173,7 @@ services:
 
   pymongo_api_2:
     container_name: pymongo_api_2
+    image: kazhem/pymongo_api:1.0.0
     build:
       context: api_app
       dockerfile: Dockerfile
