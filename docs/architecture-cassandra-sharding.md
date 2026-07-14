@@ -240,3 +240,126 @@ db = client.get_database(
 # Для проверки остатка перед оплатой — только primary (эквивалентно read_preference по умолчанию)
 db_primary = client.get_database("mobilnyMir", read_preference=ReadPreference.PRIMARY)
 ```
+
+## Задание 10 — Миграция на Cassandra
+
+### 10.1 Какие данные переносим
+
+| Сущность | Мигрируем? | Обоснование |
+|---|---|---|
+| `orders` (история + статус) | Да, частично | Резкий рост записи в пик (50 000 запросов/сек), естественный time-series доступ («последние заказы пользователя»), нужна масштабируемость записи без полного решардинга; целостность обеспечивается через consistency level (`QUORUM`), а не отказом от неё |
+| `carts` / пользовательские сессии | Да | Очень высокая частота чтения/записи на каждое действие пользователя, естественный TTL, ценность leaderless geo-репликации при географическом росте магазина |
+| `products` (каталог) | Нет, остаётся в MongoDB | Нужны гибкие ad hoc фильтры по категории и диапазону цен — сильная сторона MongoDB; Cassandra требует query-first моделирования (отдельная таблица под каждый паттерн доступа), что делает произвольную фильтрацию неудобной; каталог не является write-heavy во время распродажи |
+
+Почему Cassandra решает исходную проблему: MongoDB с range-шардированием при добавлении новых
+шардов полностью перераспределяла данные между всеми узлами, проседая по latency в пик нагрузки.
+Cassandra использует consistent hashing (кольцо токенов) — добавление узла двигает только
+соседние диапазоны токенов, а не весь кластер целиком, что кардинально снижает blast radius
+масштабирования под нагрузкой.
+
+### 10.2 Концептуальная модель
+
+Cassandra требует моделирования «от паттерна доступа» — одна таблица на каждый нужный запрос,
+данные денормализуются (дублируются) между таблицами, а не нормализуются.
+
+**История заказов пользователя** — партиционируем по `(customer_id, year_month)` (бакетирование
+по месяцу защищает от неограниченного роста партиции самых активных клиентов), кластеризуем по
+`order_datetime DESC` для естественного «последние заказы сверху»:
+
+```sql
+CREATE KEYSPACE IF NOT EXISTS mobilny_mir
+  WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': 3};
+
+CREATE TABLE mobilny_mir.orders_by_customer (
+    customer_id   text,
+    year_month    text,
+    order_datetime timestamp,
+    order_id      text,
+    status        text,
+    total         decimal,
+    geo_zone      text,
+    items         list<frozen<map<text, text>>>,
+    PRIMARY KEY ((customer_id, year_month), order_datetime, order_id)
+) WITH CLUSTERING ORDER BY (order_datetime DESC, order_id ASC);
+```
+
+**Точечный статус заказа по `order_id`** (например, для вебхуков/дашбордов) — отдельная таблица,
+партиционированная напрямую по `order_id`:
+
+```sql
+CREATE TABLE mobilny_mir.orders_by_id (
+    order_id       text PRIMARY KEY,
+    customer_id    text,
+    order_datetime timestamp,
+    status         text,
+    total          decimal,
+    geo_zone       text,
+    items          list<frozen<map<text, text>>>
+);
+```
+
+Запись заказа пишется в обе таблицы (denormalization on write) — либо последовательно из
+приложения, либо через `BATCH` (логический, не atomic-cross-partition — Cassandra `BATCH` для
+разных партиций не даёт атомарности между ними, лишь группирует отправку):
+
+```sql
+BEGIN BATCH
+  INSERT INTO mobilny_mir.orders_by_customer (customer_id, year_month, order_datetime, order_id, status, total, geo_zone, items)
+  VALUES ('cust-42', '2026-07', '2026-07-13T10:00:00Z', 'ord-9001', 'created', 4990.00, 'ekb', [{'product_id': 'p-1', 'qty': '1'}]);
+  INSERT INTO mobilny_mir.orders_by_id (order_id, customer_id, order_datetime, status, total, geo_zone, items)
+  VALUES ('ord-9001', 'cust-42', '2026-07-13T10:00:00Z', 'created', 4990.00, 'ekb', [{'product_id': 'p-1', 'qty': '1'}]);
+APPLY BATCH;
+```
+
+**Корзины** — партиционируем по тому же `owner_key`, что и в MongoDB-дизайне Задания 7 (единая
+архитектурная идея на оба хранилища), кластеризуем по `product_id`, чтобы добавление/удаление
+одного товара было точечной операцией без чтения-модификации всего документа корзины; TTL —
+нативно на уровне строки:
+
+```sql
+CREATE TABLE mobilny_mir.cart_items (
+    owner_key  text,
+    product_id text,
+    quantity   int,
+    added_at   timestamp,
+    PRIMARY KEY (owner_key, product_id)
+) WITH default_time_to_live = 2592000;  -- 30 дней, соответствует expires_at из MongoDB-дизайна
+
+UPDATE mobilny_mir.cart_items USING TTL 2592000
+  SET quantity = 2, added_at = toTimestamp(now())
+  WHERE owner_key = 'sess-abc123' AND product_id = 'p-42';
+```
+
+**Горячие партиции и решардинг:** партиционирование по `customer_id`/`owner_key` (высококардинальные,
+близкие к равномерному распределению при большой базе клиентов) в сочетании с бакетированием по
+месяцу для `orders_by_customer` ограничивает рост отдельной партиции даже для самых активных
+клиентов. Consistent hashing (Murmur3Partitioner по умолчанию) не требует ручного выбора
+hash-суффикса, как в MongoDB, — партиционер сам равномерно распределяет партиции по кольцу токенов;
+при добавлении узла перемещается лишь часть диапазона токенов соседних узлов, а не полный пересчёт.
+
+### 10.3 Стратегии восстановления целостности
+
+| Стратегия | Применяем к | Обоснование |
+|---|---|---|
+| **Hinted Handoff** | Все таблицы (`orders_by_*`, `cart_items`) | Работает по умолчанию для любой записи при кратковременной недоступности реплики — сохраняет доступность записи без немедленного full repair; нет причин отключать где-либо |
+| **Read Repair** | `orders_by_customer`, `orders_by_id` — через выбор consistency level `QUORUM` на чтение | В современной Cassandra (4.0+) read repair встроен в чтения на `QUORUM`+: реплика с устаревшими данными чинится попутно с обычным запросом. Заказы читаются часто сразу после записи (страница подтверждения) — такое «самолечение» почти бесплатно и держит `orders_by_*` консистентными без отдельного фонового процесса |
+| **Anti-Entropy Repair** (`nodetool repair`) | Все таблицы, но с разной частотой: `cart_items` — раз в 2–3 дня; `orders_by_*` — раз в 7 дней | `cart_items` использует построчный TTL → активный churn tombstone'ов от истёкших записей; частый repair держит их количество под контролем и укладывается в `gc_grace_seconds` (по умолчанию 10 дней), не давая просроченным данным «воскреснуть» после восстановления упавшей ноды. Для `orders_by_*` штатной еженедельной частоты достаточно — данные почти не удаляются |
+
+**Consistency level по операциям:**
+
+```sql
+-- Заказ: целостность важнее задержки — QUORUM на запись и на чтение
+cqlsh> CONSISTENCY QUORUM;
+cqlsh> INSERT INTO mobilny_mir.orders_by_id (order_id, customer_id, order_datetime, status, total, geo_zone)
+       VALUES ('ord-9001', 'cust-42', toTimestamp(now()), 'created', 4990.00, 'ekb');
+
+-- Корзина: задержка важнее строгой консистентности — LOCAL_ONE
+cqlsh> CONSISTENCY LOCAL_ONE;
+cqlsh> UPDATE mobilny_mir.cart_items SET quantity = 2
+       WHERE owner_key = 'sess-abc123' AND product_id = 'p-42';
+```
+
+В драйвере приложения (например, `cassandra-driver` для Python) уровень консистентности задаётся
+per-request через `ConsistencyLevel.QUORUM` / `ConsistencyLevel.LOCAL_ONE` в объекте `Statement`,
+а не в самом CQL-запросе — синтаксис `CONSISTENCY ...;` выше специфичен для интерактивного
+`cqlsh` и приведён здесь для иллюстрации.
