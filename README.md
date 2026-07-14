@@ -33,3 +33,9 @@ curl --silent http://ifconfig.me
 ## Доступные эндпоинты
 
 Список доступных эндпоинтов, swagger http://<ip виртуальной машины>:8080/docs
+
+## Архитектурный документ (задания 7–10)
+
+`docs/architecture-cassandra-sharding.md` — схемы коллекций и шард-ключи для `products`/`orders`/
+`carts`, метрики и устранение hot shards, таблица read preference, и дизайн миграции критичных
+данных на Cassandra.
