@@ -1,0 +1,50 @@
+name: mongo-sharding
+
+services:
+  configsvr1:
+    image: mongo:7.0
+    container_name: configsvr1
+    command: ["mongod", "--configsvr", "--replSet", "configReplSet", "--port", "27019", "--wiredTigerCacheSizeGB", "0.25", "--bind_ip_all"]
+    volumes:
+      - configsvr1_data:/data/db
+
+  shard1:
+    image: mongo:7.0
+    container_name: shard1
+    command: ["mongod", "--shardsvr", "--replSet", "shard1rs", "--port", "27018", "--wiredTigerCacheSizeGB", "0.25", "--bind_ip_all"]
+    volumes:
+      - shard1_data:/data/db
+
+  shard2:
+    image: mongo:7.0
+    container_name: shard2
+    command: ["mongod", "--shardsvr", "--replSet", "shard2rs", "--port", "27018", "--wiredTigerCacheSizeGB", "0.25", "--bind_ip_all"]
+    volumes:
+      - shard2_data:/data/db
+
+  mongos:
+    image: mongo:7.0
+    container_name: mongos
+    depends_on:
+      - configsvr1
+      - shard1
+      - shard2
+    command: ["mongos", "--configdb", "configReplSet/configsvr1:27019", "--port", "27017", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+
+  pymongo_api:
+    image: kazhem/pymongo_api:1.0.0
+    container_name: pymongo_api
+    depends_on:
+      - mongos
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+
+volumes:
+  configsvr1_data:
+  shard1_data:
+  shard2_data:
