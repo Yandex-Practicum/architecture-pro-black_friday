@@ -45,6 +45,11 @@ docker compose up -d
 - таблицу read preference для чтения с primary/secondary;
 - модель переноса части данных на Cassandra.
 
+## Сдача
+
+Для проверки нужен публичный репозиторий на GitHub и pull request в основную ветку (`main`).
+В ревью отправляется ссылка на pull request.
+
 ## Исходный PoC
 
 В корне оставлен исходный вариант с одним MongoDB:
