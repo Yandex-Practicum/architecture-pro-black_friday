@@ -1,0 +1,224 @@
+name: mongo-sharding
+
+services:
+  # -- MongoDb Cluster --
+  mongos_router:
+    image: mongo:latest
+    container_name: mongos_router
+    restart: always
+    command:
+      [
+        "mongos",
+        "--configdb",
+        "configSrv/configSrv:27017",
+        "--bind_ip_all",
+        "--port",
+        "27020"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27020", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    depends_on:
+      - configSrv
+    ports:
+      - "27020:27020"
+    networks:
+      - mongo-sharding-network
+
+  configSrv:
+    image: mongo:latest
+    container_name: configSrv
+    restart: always
+    volumes:
+      - config-data:/data/db
+    command:
+      [
+        "--configsvr",
+        "--replSet",
+        "configSrv",
+        "--bind_ip_all",
+        "--port",
+        "27017"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    ports:
+      - "27017:27017"
+    networks:
+      - mongo-sharding-network
+
+  shard1_1:
+    image: mongo:latest
+    container_name: shard1_1
+    restart: always
+    volumes:
+      - shard1_1-data:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard-1",
+        "--bind_ip_all",
+        "--port",
+        "27031"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27031", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    ports:
+      - "27031:27031"
+    networks:
+      - mongo-sharding-network
+
+  shard1_2:
+    image: mongo:latest
+    container_name: shard1_2
+    restart: always
+    volumes:
+      - shard1_2-data:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard-1",
+        "--bind_ip_all",
+        "--port",
+        "27032"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27032", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    ports:
+      - "27032:27032"
+    networks:
+      - mongo-sharding-network
+
+  shard1_3:
+    image: mongo:latest
+    container_name: shard1_3
+    restart: always
+    volumes:
+      - shard1_3-data:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard-1",
+        "--bind_ip_all",
+        "--port",
+        "27033"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27033", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    ports:
+      - "27033:27033"
+    networks:
+      - mongo-sharding-network
+
+  shard2_1:
+    image: mongo:latest
+    container_name: shard2_1
+    restart: always
+    volumes:
+      - shard2_1-data:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard-2",
+        "--bind_ip_all",
+        "--port",
+        "27041"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27041", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    ports:
+      - "27041:27041"
+    networks:
+      - mongo-sharding-network
+
+  shard2_2:
+    image: mongo:latest
+    container_name: shard2_2
+    restart: always
+    volumes:
+      - shard2_2-data:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard-2",
+        "--bind_ip_all",
+        "--port",
+        "27042"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27042", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    ports:
+      - "27042:27042"
+    networks:
+      - mongo-sharding-network
+
+  shard2_3:
+    image: mongo:latest
+    container_name: shard2_3
+    restart: always
+    volumes:
+      - shard2_3-data:/data/db
+    command:
+      [
+        "--shardsvr",
+        "--replSet",
+        "shard-2",
+        "--bind_ip_all",
+        "--port",
+        "27043"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongosh", "--port", "27043", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+    ports:
+      - "27043:27043"
+    networks:
+      - mongo-sharding-network
+  # -- MongoDb --
+
+  pymongo_api:
+    container_name: pymongo_api
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos_router
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://mongos_router:27020"
+      MONGODB_DATABASE_NAME: "somedb"
+    networks:
+      - mongo-sharding-network
+    restart: always
+
+volumes:
+  config-data:
+  shard1_1-data:
+  shard1_2-data:
+  shard1_3-data:
+  shard2_1-data:
+  shard2_2-data:
+  shard2_3-data:
+
+networks:
+  mongo-sharding-network:
