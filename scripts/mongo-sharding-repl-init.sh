@@ -62,21 +62,6 @@ echo 'Router done'
 sleep 5
 
 # Инициализация набора данных
-echo 'Data seeding'
-docker compose exec -T mongos_router mongosh --port 27020 <<EOF
-use somedb
-for (var i = 0; i < 1000; i++) {
-  db.helloDoc.insertOne({ age: i, name: "ly" + i });
-}
-EOF
-echo 'Seeding done'
-
-# Проверка
-echo 'Checking data'
-docker compose exec -T mongos_router mongosh --port 27020 <<EOF
-use somedb
-db.helloDoc.countDocuments()
-db.helloDoc.getShardDistribution()
-EOF
+bash "$(dirname "$0")/seed.sh"
 
 echo 'Initialization completed!'

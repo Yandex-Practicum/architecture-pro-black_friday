@@ -8,10 +8,10 @@
 docker compose up -d
 ```
 
-Заполняем mongodb данными
+Инициализируем кластер и заполняем mongodb данными (для заполнения данными используется скрипт `seed.sh`)
 
 ```shell
-../scripts/mongo-sharding-init.sh
+../scripts/mongo-sharding-repl-init.sh
 ```
 
 ## Как проверить
