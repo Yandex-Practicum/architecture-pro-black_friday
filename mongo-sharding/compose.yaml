@@ -1,0 +1,44 @@
+name: mongo-sharding
+
+services:
+  config-srv:
+    image: mongo:7.0
+    command: ["mongod", "--configsvr", "--replSet", "config-rs", "--port", "27019", "--bind_ip_all"]
+    volumes:
+      - config-data:/data/db
+
+  shard1:
+    image: mongo:7.0
+    command: ["mongod", "--shardsvr", "--port", "27018", "--bind_ip_all"]
+    volumes:
+      - shard1-data:/data/db
+
+  shard2:
+    image: mongo:7.0
+    command: ["mongod", "--shardsvr", "--port", "27018", "--bind_ip_all"]
+    volumes:
+      - shard2-data:/data/db
+
+  mongos:
+    image: mongo:7.0
+    command: ["mongos", "--configdb", "config-rs/config-srv:27019", "--bind_ip_all"]
+    depends_on:
+      - config-srv
+      - shard1
+      - shard2
+
+  pymongo-api:
+    image: kazhem/pymongo_api:1.0.0
+    platform: linux/amd64
+    depends_on:
+      - mongos
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URL: "mongodb://mongos:27017"
+      MONGODB_DATABASE_NAME: "somedb"
+
+volumes:
+  config-data:
+  shard1-data:
+  shard2-data:
