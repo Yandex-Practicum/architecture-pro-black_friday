@@ -360,6 +360,69 @@ sh.balancerCollectionStatus("mobile_world.products")
 
 * balancerCompliant - значит данные сбалансированы
 
+
+Для диагностирования перенагруженного шарда из-за hot key можно воспользоваться следующими командами:
+```
+  mongostat --host shard1...
+
+  Ответ примерно такой
+insert query update delete getmore command dirty  used flushes vsize   res qrw arw net_in net_out conn                time
+    *0    15     *0     *0       0     3|0  0.2% 12.4%       0 1.2G 640.0M 0|0 0|0   4.2k    2.1k    5 Aug 27 01:08:00.123
+    *0    22     *0     *0       0     5|0  0.2% 12.5%       0 1.2G 640.0M 0|0 0|0   6.1k    3.4k    5 Aug 27 01:08:01.124
+    *0    18     *0     *0       0     2|0  0.3% 12.5%       1 1.2G 640.0M 0|1 0|0   5.0k    2.8k    5 Aug 27 01:08:02.124
+
+```
+Здесь можно глянуть rps какой-то конкретной операции и в дальнейшем строить стратегии в зависимости от этого. К примеру, если есть много чтений на шард, то можно было бы перевести весь читающий трафик на реплики в рамках операционного реагирования
+
+Общее CPU можно проверить командой
+```
+  top -b -n 1 -p $(pgrep mongod)
+```
+
+Примерный вывод
+```
+top - 01:42:15 up 45 days,  3:12,  1 user,  load average: 1.45, 0.85, 0.42
+Tasks:   1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 24.5 us,  5.2 sy,  0.0 ni, 68.1 id,  2.1 wa,  0.0 hi,  0.1 si,  0.0 st
+MiB Mem :  32104.2 total,   4215.8 free,  21450.1 used,   6438.3 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  10122.4 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+ 124532 mongodb   20   0   42.1g  19.8g   1.2g S  118.5  61.8 1420:11.45 mongod
+
+```
+
+Примерную задержку можно глянуть командой
+```
+  db.setProfilingLevel(1, { slowms: 100 })
+```
+
+И вывести коллекцию `system.profile`. В поле `millis` можно найти общее время выолнения операции.
+
+В целом для борьбы с проблемой hot key можно добавить кеш перед запросами в базу, чтобы значительно снять с нее нагрузку.
+
+Если тот горячий товар - это не временная акция, и там очень много запросов на запись, то можно разделить эту коллекцию на две - product_catalog (статическая инфа о продукте) и product_stock_zones (чисто остатки товаров)
+
+Примерно так бы выглядела новая коллекция
+```
+db.products_stock_zones.insertOne({
+  product_id: UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8"),
+  geo_zone: "moscow",
+  quantity: NumberInt(150),
+  updated_at: ISODate("2026-08-27T01:45:00Z")
+});
+```
+
+И делаем составной ключ шардирования:
+```
+sh.shardCollection("db.products_stock_zones", { 
+  product_id: 1, 
+  geo_zone: "hashed" 
+});
+```
+
+Теперь записи по остаткам товаров распределены также и по зонам
+
 <!-- Задание 9 -->
 
 ### Чтение с реплик и консистентность
